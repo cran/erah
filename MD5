@@ -1,5 +1,6 @@
-652b75bffbf0e2091609ee7b22b44315 *DESCRIPTION
+0d7e06ca93177e151157bdd7da255001 *DESCRIPTION
 d49c1a55c549082ad8950c71bc301c82 *NAMESPACE
+1b10a36ec3c3534057b9831fb839f143 *NEWS
 1776d22600167fd28c9743d5c959b6ea *R/DB.R
 d9bf5fd98a4668f2deee7837a3c72230 *R/alignment.R
 caaba4faa2316bca4b1e9c7f0135ac81 *R/erah.R
@@ -14,7 +15,7 @@ ce6bbc6601969e1f3e32e912bd6583ad *R/preprocessing.R
 38734493a9d1032274dfe727fdd539ff *R/zzz.R
 15d8e269332e538fc6e1b577814aae0c *build/vignette.rds
 451aba5dbda682aeeb25d9d832960810 *data/mslib.rda
-02f7c3803b672ffde8705342822232b3 *inst/doc/eRahManual.pdf
+91b4af8405ff99aa31cf58e40df585cc *inst/doc/eRahManual.pdf
 3da915c9192ccbe02fb762452a42f930 *inst/doc/eRahManual.pdf.asis
 0c1392ca6c2ebdea28e916bb7074002d *man/MetaboSet-class.Rd
 be14d10461165066a040528f2f61c0ba *man/RawDataParameters-class.Rd
