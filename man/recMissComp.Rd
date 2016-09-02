@@ -14,9 +14,9 @@ recMissComp(Experiment, min.samples, free.model=F)
 
 }
 \details{
-WARNING: If compounds were previously identified, now they have to be identified again.
+WARNING: If compounds were previously identified, they have to be identified again after applying the "recMissComp" function. This means that "identifyComp" function has to be executed always after "recMissComp" for identification of compounds, even if "identifyComp" has been previously applied before.
 
-The free.model parameter is recomended to be always FALSE (except for carbon tracking applications). This is because spectra of the samples where the compound is missing, is usually affected by noise, and this could lead to a low matching score.
+The free.model parameter is recomended to be always FALSE (except for carbon tracking applications). This is because the spectra of the samples where the compound is missing is usually affected by noise, and this could decrease the matching score for a certain compound.
 
 }
 \value{

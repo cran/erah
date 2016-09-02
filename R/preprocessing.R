@@ -2,9 +2,9 @@
 pre.process <- function(sampl, sigma.scans)
 {
 	sigma.model.filter <- round(sigma.scans)
-	if(is.even(sigma.model.filter)) sigma.model.filter <- sigma.model.filter - 1 
+	if(is.even(sigma.model.filter)) sigma.model.filter <- sigma.model.filter + 1 
 	filt.order <- 3
-	if(filt.order<=sigma.model.filter) filt.order <- sigma.model.filter - 1
+	if(filt.order>=sigma.model.filter) filt.order <- sigma.model.filter - 1
 	if(filt.order>=1) sampl <- soft.filter(sampl,filt.order,sigma.model.filter)
 	sampl[sampl<0] <- 0
 	

@@ -52,6 +52,7 @@ recMissComp <- function(Experiment, min.samples, free.model=F)
 			#sampleRD@factor.minimum.sd <- Experiment@Data@Parameters$factor.minimum.sd 
 			
 			avoid.mz <- sampleRD@avoid.processing.mz - (sampleRD@min.mz - 1)
+			avoid.mz <- avoid.mz[-which(avoid.mz<1)]
 			sampleRD@data[,avoid.mz] <- 0
 	
 			moving.maximas <- apply(sampleRD@data,2,function(x){max(x)})

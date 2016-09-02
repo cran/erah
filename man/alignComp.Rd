@@ -23,7 +23,7 @@ For experiment of more than 1000 samples, and depending on the computer, alignme
 The function returns an updated S4 'MetaboSet' class, where the GC-MS samples have been now aligned.
 }
 \references{
-[1] eRah: an R package for spectral deconvolution, alignment, and metabolite identification in GC/MS-based untargeted metabolomics. Xavier Domingo-Almenara, Alexandre Perera, Maria Vinaixa, Sara Samino, Xavier Correig, Jesus Brezmes, Oscar Yanes. (2016) Article in Press.
+[1] Xavier Domingo-Almenara, et al., eRah: A Computational Tool Integrating Spectral Deconvolution and Alignment with Quantification and Identification of Metabolites in GC-MS-Based Metabolomics. Analytical Chemistry (2016). DOI: 10.1021/acs.analchem.6b02927 
 }
 \author{
 Xavier Domingo-Almenara. xavier.domingo@urv.cat

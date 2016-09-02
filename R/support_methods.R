@@ -45,7 +45,13 @@ idList <- function(object, id.database=mslib) {
 	if(!is.null(object@Results@Parameters@Alignment$min.samples)){
 		id.list <- id.list[which(id.list$FoundIn>=object@Results@Parameters@Alignment$min.samples),]
 	}
-		
+	if(!is.null(object@Results@Identification$RI.error.1))
+    {
+   	 	RI.errTab <- cbind(object@Results@Identification$AlignID, object@Results@Identification$RI.error.1)
+   	 	colnames(RI.errTab) <- c("AlignID", "RI.err")
+   	 	id.list <- cbind(merge(id.list[,1:5],  RI.errTab, by = "AlignID"), id.list[,6:ncol(id.list)])
+    }
+	
 	return(as.data.frame(id.list[order(as.numeric(as.vector(id.list[,"tmean"]))),], row.names=1:nrow(id.list)))
 }
 

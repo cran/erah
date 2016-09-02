@@ -21,7 +21,7 @@ vignette("eRahManual", package="erah")
 The function returns an updated S4 'MetaboSet' class, where the GC-MS samples have been now deconvolved.
 }
 \references{
-[1] eRah: an R package for spectral deconvolution, alignment, and metabolite identification in GC/MS-based untargeted metabolomics. Xavier Domingo-Almenara, Alexandre Perera, Maria Vinaixa, Sara Samino, Xavier Correig, Jesus Brezmes, Oscar Yanes. (2016) Article in Press.
+[1] Xavier Domingo-Almenara, et al., eRah: A Computational Tool Integrating Spectral Deconvolution and Alignment with Quantification and Identification of Metabolites in GC-MS-Based Metabolomics. Analytical Chemistry (2016). DOI: 10.1021/acs.analchem.6b02927 
 }
 \author{
 Xavier Domingo-Almenara. xavier.domingo@urv.cat
@@ -37,7 +37,7 @@ Xavier Domingo-Almenara. xavier.domingo@urv.cat
 
 # The following will set eRah for analyzing the chromatograms
 # from minutes 5 to 15, and withouth taking into account the masses
-# 35:69,73:75,147:149, widht a minimum peak widht of 0.7 seconds.
+# 35:69,73:75,147:149, with a minimum peak widht of 0.7 seconds.
 
 ex.dec.par <- setDecPar(min.peak.width=0.7, min.peak.height=5000, 
 noise.threshold=500, avoid.processing.mz=c(35:69,73:75,147:149), 

@@ -122,7 +122,7 @@ identify.factors <- function(Experiment, maxMZ, compare.only.mz, avoid.processin
 			spectra <- spectra.matrix[,j]
 			spectra.index <- which(spectra!=0) 
 			spectra.pos <- spectra.index
-			spectra.int <- round(spectra[spectra.index]*1000)
+			spectra.int <- round(normalize(spectra[spectra.index])*1000)
 			spectra.text <- paste(sweep(as.matrix(spectra.pos),1,as.matrix(spectra.int),"paste.sp"), collapse=" ")
 			spectra.text
 		})	

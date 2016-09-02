@@ -2,9 +2,9 @@ Package: erah
 Type: Package
 Title: Automated Spectral Deconvolution, Alignment, and Metabolite
         Identification in GC/MS-Based Untargeted Metabolomics
-Version: 1.0.1
+Version: 1.0.2
 Date: 2016-4-11
-Author: Xavier Domingo-Almenara, Alexandre Perera, Maria Vinaixa, Sara Samino, Marta Diaz, Lourdes Ibanez, Xavier Correig, Jesus Brezmes, Oscar Yanes
+Author: Xavier Domingo-Almenara, Sara Samino, Maria Vinaixa, Alexandre Perera, Oscar Yanes
 Depends: R (>= 2.10), Rcpp
 Imports: osd, ncdf4, caTools, nnls, HiClimR, igraph, signal, quantreg,
         methods
@@ -18,5 +18,5 @@ Repository: CRAN
 LazyData: yes
 VignetteBuilder: R.rsp
 NeedsCompilation: no
-Packaged: 2016-04-22 11:55:53 UTC; xavidomingo
-Date/Publication: 2016-04-22 14:44:19
+Packaged: 2016-09-02 09:02:06 UTC; xavidomingo
+Date/Publication: 2016-09-02 22:52:13

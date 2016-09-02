@@ -167,7 +167,7 @@ getC.rq <- function(winD, target.s)
 	#target.s <- target.s/max(target.s)	
 	#winD[,which(target.s<0.005)] <- 0
 
-	Cps <- apply(winD, 1, function(x) as.numeric(coefficients(rq(x~target.s))[2]))
+	Cps <- apply(winD, 1, function(x) as.numeric(coefficients(rq(x~target.s, method="fn"))[2]))
 	Cps[which(Cps<0)] <- 0
 	Cps[which(is.na(Cps))] <- 0
 	Cps <- normalize(Cps)
@@ -187,6 +187,12 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 	from.s <- analysis.window[1]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
 	if(trunc(from.s)==0) from.s <- 1
 	to.s <- analysis.window[2]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
+	
+	if(analysis.window==0)
+	{
+		from.s <- 1
+		to.s <- nrow(sampleRD@data)
+	}
 	
 	if(length(intersect(c(trunc(from.s),trunc(to.s)),1:nrow(sampleRD@data)))!=2)
 	{
@@ -249,7 +255,8 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 				local.kernel <- local.kernel[-is.zeroitems]	
 				local.matrix <- local.matrix[-is.zeroitems,]
 			}
-		
+			if(length(cov.m)==1) next
+
 			solv.m <- try(solve(cov.m), silent=T)
 			if(class(solv.m)=="try-error") {
 				mf[i] <- 0
