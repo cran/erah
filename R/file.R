@@ -58,27 +58,44 @@ Or, alternatively, execute the following R code:
 
 load.ncdf4 <- function(filename)
 {	
-	
-	measurement = nc_open(filename)	
-	
-	mass_values <- ncvar_get(measurement,"mass_values")   
-	mass_intensities <- ncvar_get(measurement,"intensity_values") 
-	scan_indexes <- ncvar_get(measurement,"scan_index")
-	min_mz <- as.numeric(ncvar_get(measurement,"mass_range_min", count=1))
-	max_mz <- as.numeric(ncvar_get(measurement,"mass_range_max", count=1))
-	start_time <- as.numeric(ncvar_get(measurement,"scan_acquisition_time", count=1))
-	scans_per_second <- as.numeric((1/ncvar_get(measurement,"scan_duration", count=1)))
-				
-	full.matrix <- matrix(0,length(scan_indexes),((max_mz-min_mz)+1))
-	mass_values <- mass_values - (min_mz - 1)
-	
-	for(i in 1:(length(scan_indexes)-1))
-	{
-		full.matrix[i,mass_values[(scan_indexes[i]+1):scan_indexes[i+1]]] <- mass_intensities[(scan_indexes[i]+1):scan_indexes[i+1]]
+	isExact <- FALSE
+  	measurement = nc_open(filename)
+    mass_values <- ncvar_get(measurement, "mass_values")
+    rndSmplColl <- sample(mass_values, 500)
+    if (any(rndSmplColl!=(rndSmplColl^2/trunc(rndSmplColl)))) isExact <- TRUE
+    mass_intensities <- ncvar_get(measurement, "intensity_values")
+    scan_indexes <- ncvar_get(measurement, "scan_index")
+    min_mz <- round(min(mass_values))
+    max_mz <- round(max(mass_values))
+    start_time <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 1))
+    rndScan <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 10))[10]
+    rndScan2 <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 11))[11]
+    scans_per_second <- as.numeric((1/(rndScan2-rndScan)))
+   
+   	if(isExact)
+   	{
+	    full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
+	    mass_values <- round(mass_values - (min_mz - 1))
+	    for (i in 1:(length(scan_indexes) - 1)) {
+	     	MssLoc <- mass_values[(scan_indexes[i] + 1):scan_indexes[i + 1]]
+	     	MssInt <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 1]]
+			MssInt <- as.vector(unlist(lapply(split(MssInt, MssLoc), sum)))
+			MssLoc <- unique(MssLoc)
+	        full.matrix[i, MssLoc] <- MssInt
+	        
+	    }
+	}else{
+		full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
+    	mass_values <- mass_values - (min_mz - 1)
+	    for (i in 1:(length(scan_indexes) - 1)) {
+	        full.matrix[i, mass_values[(scan_indexes[i] + 1):scan_indexes[i + 
+	            1]]] <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 
+	            1]]
+	    }
 	}
 	
-	sampleRD <- new("RawDataParameters", data = full.matrix, min.mz = min_mz, max.mz = max_mz, start.time = start_time, mz.resolution = 1, scans.per.second=scans_per_second)
-	sampleRD
+    sampleRD <- new("RawDataParameters", data = full.matrix,  min.mz = min_mz, max.mz = max_mz, start.time = start_time, mz.resolution = 1, scans.per.second = scans_per_second)
+    sampleRD
 }
 
 

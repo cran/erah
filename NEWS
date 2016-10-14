@@ -1,8 +1,16 @@
+erah v1.0.3 (Release date: 2016-10-13)
+==============
+
+* Documentation updated.
+* Minor bug fixes.
+* CDF file reading function updated, to assure compatibility with different vendors equipment (Thanks to Dr. Hasler-Sheetal).
+
+
 erah v1.0.2 (Release date: 2016-09-02)
 ==============
 
 * Documentation updated.
-* New function included ‘export2MSP’: exportation of spectra into MSP format 
+* New function included: export2MSP - exportation of spectra into MSP format 
 * Minor bug fixes.
 * Bug with pre-processing filter order, now fixed.
 * Bug that made eRah stop when processing some chromatograms, now fixed.
@@ -10,7 +18,6 @@ erah v1.0.2 (Release date: 2016-09-02)
 erah v1.0.1 (Release date: 2016-04-22)
 ==============
 
-Changes:
 * Small documentation improvements
 * Minor improvements and bug fixes.
 

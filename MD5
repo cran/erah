@@ -1,12 +1,12 @@
-1ed8d11a2ea1156962b9e7c649cbc5ee *DESCRIPTION
+034e053d78e6fb8aa6b45c22e9925cee *DESCRIPTION
 10028099ee1537e9142d30a45f391c52 *NAMESPACE
-1a0fd77a3d38fca97f3e097258ef0d2d *NEWS
+04412384ea106dbc1c1f638e79b73358 *NEWS
 2106771780ce3b848ac4e22f3b243515 *R/DB.R
 d9bf5fd98a4668f2deee7837a3c72230 *R/alignment.R
-d17dc69ac7b4ed1b00d335e161a2c894 *R/erah.R
-5734bb28d461b930d4aefa1cd54ffdf5 *R/file.R
+a919fc5c60c48cb115bb68750d974c75 *R/erah.R
+044f2d8eb08503c1b8f75f66bbb85094 *R/file.R
 d913ece16693817669c0b668578ad4d8 *R/identification.R
-1ecae74def316ba5eabb0326a33545a5 *R/missingCompRecovery.R
+e46140f2db7bae553a7d9664a93d892a *R/missingCompRecovery.R
 fb0a54000b898b265395fe187d08d085 *R/plotting.R
 927b50a184eb08e26d78caa573e536f8 *R/preprocessing.R
 0677dc3d08822b7d112a61ab4aa294de *R/processing.R
@@ -15,7 +15,7 @@ f2396be8269999d3655aa53db722b9ad *R/support_methods.R
 94dee848f52ace22299a293536f56b6c *R/zzz.R
 15d8e269332e538fc6e1b577814aae0c *build/vignette.rds
 451aba5dbda682aeeb25d9d832960810 *data/mslib.rda
-cc88d3dd09c9d337ec76bfc596b5d612 *inst/doc/eRahManual.pdf
+f9997e8dcf1c81e7de0c24eec732f3da *inst/doc/eRahManual.pdf
 3da915c9192ccbe02fb762452a42f930 *inst/doc/eRahManual.pdf.asis
 0c1392ca6c2ebdea28e916bb7074002d *man/MetaboSet-class.Rd
 be14d10461165066a040528f2f61c0ba *man/RawDataParameters-class.Rd

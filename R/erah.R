@@ -250,7 +250,7 @@ identifyComp <- function(Experiment, id.database=mslib, mz.range=NULL, n.putativ
 	
 	if(is.null(Experiment@Results@Parameters@Alignment$mz.range) && is.null(mz.range)) stop("A mz.range has to be specified")
 	if(is.null(mz.range)) compare.only.mz <- min(Experiment@Results@Parameters@Alignment$mz.range):max(Experiment@Results@Parameters@Alignment$mz.range)
-
+	if(!is.null(mz.range)) compare.only.mz <- mz.range
 
 	
 	id.par <- list(database.name = id.database@name, compare.only.mz = compare.only.mz, n.putative = n.putative)
