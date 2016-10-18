@@ -12,6 +12,6 @@ importFrom("stats", "coefficients", "cor", "cov", "dist", "dnorm",
              "fft", "na.omit", "prcomp", "runmed", "sd")
 
 
-export(newExp, setDecPar, setAlPar, alignComp, deconvolveComp, identifyComp, plotAlign, plotProfile, plotSpectra, recMissComp, compInfo, dataList, findComp, identifyComp, idList, alignList, plotChr, sampleInfo, createdt, phenoData, metaData, expClasses,export2MSP)
+export(newExp, setDecPar, setAlPar, alignComp, deconvolveComp, identifyComp, plotAlign, plotProfile, plotSpectra, recMissComp, compInfo, dataList, findComp, identifyComp, idList, alignList, plotChr, sampleInfo, createdt, phenoData, metaData, expClasses,export2MSP, importMSP)
 
 exportClasses(eRah_DB, RawDataParameters, MetaboSet)
