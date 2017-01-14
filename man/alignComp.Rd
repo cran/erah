@@ -14,9 +14,9 @@ alignComp(Experiment, alParameters, blocks.size=NULL)
 See eRah vignette for more details. To open the vignette, execute the following code in R:
 vignette("eRahManual", package="erah")
 
-(Available also in http://metabolomicsplatform.com/applications).
+For experiments containing more than 100 (Windows) or 1000 (Mac or Linux) samples (numbers depending on the computer resoures and sample type). In those cases alignment can be conducted by block segmentation. For an experiment of e.g. 1000 samples, the block.size can be set to 100, so the alignment will perform as multiple (ten) 100-samples experiments, to later align them into a single experiment.
 
-For experiment of more than 1000 samples, and depending on the computer, alignment can be conducted by block segmentation. For an experiment of 1000 samples, the block.size can be set to 100, so the alignment will perform as multiple (ten) 100-samples experiments, to later align them into a single experiment.
+This parameter is designed to solve the typical problem that appear when aligning under Windows operating system: "Error: cannot allocate vector of size XX Gb". Such a problem will not appear with Mac or Linux, but several hours of computation are expected when aligning a large number of samples. Using block segmentation provides a greatly improved run-time performance.
 
 }
 \value{

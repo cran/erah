@@ -184,23 +184,27 @@ getC.rq <- function(winD, target.s)
 
 get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 {
-	from.s <- analysis.window[1]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
-	if(trunc(from.s)==0) from.s <- 1
-	to.s <- analysis.window[2]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
 	
-	if(analysis.window==0)
+	if(length(analysis.window)==1 & analysis.window[1]==0)
 	{
 		from.s <- 1
 		to.s <- nrow(sampleRD@data)
+	}else{
+		from.s <- analysis.window[1]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
+	if(trunc(from.s)==0) from.s <- 1
+		to.s <- analysis.window[2]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
+		
+		if(from.s<1) from.s <- 1
+		if(to.s>nrow(sampleRD@data)) to.s <- nrow(sampleRD@data)	
 	}
 	
-	if(length(intersect(c(trunc(from.s),trunc(to.s)),1:nrow(sampleRD@data)))!=2)
-	{
-		min.t <- sampleRD@start.time/60
-		max.t <- round(nrow(sampleRD@data)/sampleRD@scans.per.second/60 + min.t,2)
-		error.txt <- paste("Analysis window out of limits, time must be between ", min.t ," and ", max.t ,sep="")
-		stop(error.txt)
-	}
+	#if(length(intersect(c(trunc(from.s),trunc(to.s)),1:nrow(sampleRD@data)))!=2)
+	#{
+	#	min.t <- sampleRD@start.time/60
+	#	max.t <- round(nrow(sampleRD@data)/sampleRD@scans.per.second/60 + min.t,2)
+	#	error.txt <- paste("Analysis window out of limits, time must be between ", min.t ," and ", max.t ,sep="")
+	#	stop(error.txt)
+	#}
 	
 	## Pre-processing
 	

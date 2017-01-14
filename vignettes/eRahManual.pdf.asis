@@ -20,7 +20,7 @@ phenoData(ex)
 expClasses(ex)
 
 ## Declare the paramenters of the experiment, the most important are the peak width, the masses to exclude and the analysis time.
-ex.dec.par <- setDecPar(min.peak.width=1, min.peak.height=5000, noise.threshold=500, avoid.processing.mz=c(35:69,73:75,147:149), analysis.time=c(5,15))
+ex.dec.par <- setDecPar(min.peak.width=1, avoid.processing.mz=c(35:69,73:75,147:149))
 
 ## To know more about the samples:
 sampleInfo(ex,1)

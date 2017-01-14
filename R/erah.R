@@ -57,7 +57,7 @@ phenoData <- function(object) {object@MetaData@Phenotype}
 ## Main Software functions:
 
 
-setDecPar <- function(min.peak.width, min.peak.height=500, noise.threshold=500, avoid.processing.mz=c(73:75,147:149), compression.coef=2, analysis.time=0)
+setDecPar <- function(min.peak.width, min.peak.height=2500, noise.threshold=500, avoid.processing.mz=c(73:75,147:149), compression.coef=2, analysis.time=0)
 {
 	softPar <- new("eRahSoftParameters",algorithm="eRah-OSD", min.peak.width = min.peak.width/60, min.peak.height = min.peak.height, noise.threshold = noise.threshold, avoid.processing.mz = avoid.processing.mz, compression.coef = compression.coef, analysis.time=analysis.time)
 	softPar

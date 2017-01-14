@@ -14,8 +14,6 @@ newExp(instrumental, phenotype=NULL, info=character())
 See eRah vignette for more details. To open the vignette, execute the following code in R:
 vignette("eRahManual", package="erah")
 
-(Available also in http://metabolomicsplatform.com/applications).
-
 }
 \value{
 \code{newExp} returns an S4 object of the class 'MetaboSet'.

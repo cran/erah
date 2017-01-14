@@ -15,7 +15,6 @@ samples.to.process=NULL)
 See eRah vignette for more details. To open the vignette, execute the following code in R:
 vignette("eRahManual", package="erah")
 
-(Available also in http://metabolomicsplatform.com/applications).
 }
 \value{
 The function returns an updated S4 'MetaboSet' class, where the GC-MS samples have been now deconvolved.

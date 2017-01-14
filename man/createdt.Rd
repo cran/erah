@@ -16,8 +16,6 @@ Two things have to be considered at this step: .csv files are different when cre
 See eRah vignette for more details. To open the vignette, execute the following code in R:
 vignette("eRahManual", package="erah")
 
-(Available also in http://metabolomicsplatform.com/applications).
-
 }
 
 \examples{

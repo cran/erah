@@ -40,7 +40,7 @@ plotSpectra <- function(Experiment, AlignId, n.putative=1, compare=T, id.databas
 
 	if(compare==F)
 	{	
-		plot(empiric.spectra, type="h", main=paste(empiric.name, "\n (Empiric Spectra)"), xlab="Mz", ylab="Intensity",xlim=xlim)
+		plot(empiric.spectra, type="h", main=paste(empiric.name, "\n (Empirical Spectra)"), xlab="Mz", ylab="Intensity",xlim=xlim)
 		text(main_mz.empiric, empiric.spectra[main_mz.empiric], labels=main_mz.empiric, cex=0.7)	
 	}else{
 		
@@ -63,7 +63,7 @@ plotSpectra <- function(Experiment, AlignId, n.putative=1, compare=T, id.databas
 		lines(db.spectra, col=draw.color, type="h")
 		main_mz.db <- sort(abs(db.spectra), decreasing=T, index.return=T)$ix[1:mz.len]
 		text(main_mz.db, db.spectra[main_mz.db], labels=main_mz.db, cex=0.7, col=draw.color)	
-		if(is.null(comp.db)) legend("topright", legend=c("Empiric","Database"), col=c("black",draw.color), pch=19)
+		if(is.null(comp.db)) legend("topright", legend=c("Empirical","Database"), col=c("black",draw.color), pch=19)
 		if(!is.null(comp.db)) legend("topright", legend=c(paste("Align ID #", AlignId, sep=""),id.database@database[[comp.db]]$Name), col=c("black",draw.color), pch=19)
 	}
 	if(return.spectra==T) return(empiric.spectra)

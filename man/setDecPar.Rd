@@ -3,7 +3,7 @@
 \title{Set Software Parameters}
 \description{Sets Software Parameters for eRah.}
 \usage{
-setDecPar(min.peak.width, min.peak.height=500, 
+setDecPar(min.peak.width, min.peak.height=2500, 
 noise.threshold=500,
 avoid.processing.mz=c(73:75,147:149), 
 compression.coef=2, analysis.time=0)
@@ -21,7 +21,6 @@ compression.coef=2, analysis.time=0)
 See eRah vignette for more details. To open the vignette, execute the following code in R:
 vignette("eRahManual", package="erah")
 
-(Available also in http://metabolomicsplatform.com/applications).
 } 
  
 \references{

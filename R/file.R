@@ -22,79 +22,73 @@ load.erahrd <- function(filename)
 	sampleObject
 }
 
+
 load.xml <- function(filename)
-{	
-	
-	if (requireNamespace("mzR", quietly = TRUE)) {
-	  	xmlO <- mzR::openMSfile(filename)
-		
-		metadata <- mzR::runInfo(xmlO)
-		
-		scans <- metadata$scanCount
-		lowMZ <- round(metadata$lowMz+0.5)
-		highMZ <- round(metadata$highMz+0.5)
-		StartTime <- metadata$dStartTime
-		ScansPerSecond <- 1/((metadata$dEndTime - metadata$dStartTime)/metadata$scanCount)
-		
-		raw.data <- mzR::get3Dmap(object=xmlO, scans=1:scans, lowMz=lowMZ, highMz=highMZ, resMz=1)
-		
-		sampleRD <- new("RawDataParameters", data = raw.data, min.mz = lowMZ, max.mz = highMZ, start.time = StartTime, mz.resolution = 1, scans.per.second=ScansPerSecond)
-		return(sampleRD)
-
-  
-   } else {
-		msg <- c("mzR is not installed. eRah can operate withouth mzR, unless you want to process .mzXML files (as in this case). To install the mzR package and be able to read mzXML files, please visit its bioconductor website: http://bioconductor.org/packages/release/bioc/html/mzR.html
-Or, alternatively, execute the following R code:
-		
-		## try http:// if https:// URLs are not supported 
-		source('https://bioconductor.org/biocLite.R')
-		biocLite('mzR')")
-		    
-		warning(msg)   
-
-   }
+{		
+  if(requireNamespace("mzR", quietly = TRUE)) {
+        xmlO <- mzR::openMSfile(filename)
+        metadata <- mzR::runInfo(xmlO)
+        scans <- 1:metadata$scanCount
+        lowMZ <- metadata$lowMz
+        highMZ <- metadata$highMz
+        if(lowMZ==0 | highMZ==0 | scans[2]==0)
+        {
+        	peakLst <- mzR::peaks(xmlO)
+        	mzVct <- unlist(lapply(peakLst, function(x) x[,1]))
+        	lowMZ <- min(mzVct, na.rm=T)
+        	highMZ <- max(mzVct, na.rm=T)
+        	scans <- which(unlist(lapply(peakLst, function(x) nrow(x)))!=0)
+        }
+        lowMZ <- round(lowMZ + 0.5)
+        highMZ <- round(highMZ + 0.5)
+        StartTime <- metadata$dStartTime
+        ScansPerSecond <- 1/((metadata$dEndTime - metadata$dStartTime)/metadata$scanCount)
+       
+       log <- utils::capture.output(raw.data <- mzR::get3Dmap(object = xmlO, scans = scans, lowMz = lowMZ, highMz = highMZ, resMz = 1))
+        sampleRD <- new("RawDataParameters", data = raw.data, min.mz = lowMZ, max.mz = highMZ, start.time = StartTime, mz.resolution = 1, scans.per.second = ScansPerSecond)
+        return(sampleRD)
+    }
+    else {
+        msg <- c("mzR is not installed. eRah and Baitmet can operate withouth mzR, unless you want to process .mzXML files (as in this case). To install the mzR package and be able to read mzXML files, please visit its bioconductor website: http://bioconductor.org/packages/release/bioc/html/mzR.html\nOr, alternatively, execute the following R code:\n\t\t\n\t\t## try http:// if https:// URLs are not supported \n\t\tsource('https://bioconductor.org/biocLite.R')\n\t\tbiocLite('mzR')")
+        warning(msg)
+    }
 }
 
 
 load.ncdf4 <- function(filename)
 {	
-	isExact <- FALSE
-  	measurement = nc_open(filename)
+   isExact <- FALSE
+    measurement = nc_open(filename)
     mass_values <- ncvar_get(measurement, "mass_values")
     rndSmplColl <- sample(mass_values, 500)
-    if (any(rndSmplColl!=(rndSmplColl^2/trunc(rndSmplColl)))) isExact <- TRUE
+    if (any(rndSmplColl != (rndSmplColl^2/trunc(rndSmplColl)))) isExact <- TRUE
     mass_intensities <- ncvar_get(measurement, "intensity_values")
     scan_indexes <- ncvar_get(measurement, "scan_index")
-    min_mz <- round(min(mass_values))
-    max_mz <- round(max(mass_values))
+    min_mz <- round(min(mass_values)) - 1
+    max_mz <- round(max(mass_values)) + 1
     start_time <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 1))
     rndScan <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 10))[10]
     rndScan2 <- as.numeric(ncvar_get(measurement, "scan_acquisition_time", count = 11))[11]
-    scans_per_second <- as.numeric((1/(rndScan2-rndScan)))
-   
-   	if(isExact)
-   	{
-	    full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
-	    mass_values <- round(mass_values - (min_mz - 1))
-	    for (i in 1:(length(scan_indexes) - 1)) {
-	     	MssLoc <- mass_values[(scan_indexes[i] + 1):scan_indexes[i + 1]]
-	     	MssInt <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 1]]
-			MssInt <- as.vector(unlist(lapply(split(MssInt, MssLoc), sum)))
-			MssLoc <- unique(MssLoc)
-	        full.matrix[i, MssLoc] <- MssInt
-	        
-	    }
-	}else{
-		full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
-    	mass_values <- mass_values - (min_mz - 1)
-	    for (i in 1:(length(scan_indexes) - 1)) {
-	        full.matrix[i, mass_values[(scan_indexes[i] + 1):scan_indexes[i + 
-	            1]]] <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 
-	            1]]
-	    }
-	}
-	
-    sampleRD <- new("RawDataParameters", data = full.matrix,  min.mz = min_mz, max.mz = max_mz, start.time = start_time, mz.resolution = 1, scans.per.second = scans_per_second)
+    scans_per_second <- as.numeric((1/(rndScan2 - rndScan)))
+    if (isExact) {
+        full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
+        mass_values <- round(mass_values - (min_mz - 1))
+        for (i in 1:(length(scan_indexes) - 1)) {
+            MssLoc <- mass_values[(scan_indexes[i] + 1):scan_indexes[i +  1]]
+            MssInt <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 1]]
+            MssInt <- as.vector(unlist(lapply(split(MssInt, MssLoc), sum)))
+            MssLoc <- unique(MssLoc)
+            full.matrix[i, MssLoc] <- MssInt
+        }
+    }
+    else {
+        full.matrix <- matrix(0, length(scan_indexes), ((max_mz - min_mz) + 1))
+        mass_values <- mass_values - (min_mz - 1)
+        for (i in 1:(length(scan_indexes) - 1)) {
+            full.matrix[i, mass_values[(scan_indexes[i] + 1):scan_indexes[i + 1]]] <- mass_intensities[(scan_indexes[i] + 1):scan_indexes[i + 1]]
+        }
+    }
+    sampleRD <- new("RawDataParameters", data = full.matrix, min.mz = min_mz, max.mz = max_mz, start.time = start_time, mz.resolution = 1, scans.per.second = scans_per_second)
     sampleRD
 }
 
