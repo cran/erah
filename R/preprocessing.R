@@ -17,28 +17,23 @@ pre.process <- function(sampl, sigma.scans)
 	sampl
 }
 
-removeBaseline <- function(x,k)
+removeBaseline <- function (x, k) 
 {
-	#x <- x1
-	#k <- 201
-	
-	if(max(x)==0) return(x)
+    if (max(x) == 0) return(x)
+    x.min <- runningmin(x, k)
+    k.m <- k
+    if(k.m>=length(x)) k.m <- length(x) - 1
+    if (is.even(k.m) == T) k.m <- k.m - 1
+    x.dupCopy <- c(x[length(x):1],x,x[length(x):1])
+    x.med <- stats::runmed(x.dupCopy, k.m, endrule='keep')[(length(x)+1):(2*length(x))]
 
-	x.min <- runmin(x,k)
-	k.m <- k
-	if(is.even(k)==T) k.m <- k.m - 1
-	x.med <- runmed(x,k.m)
-	base.sd <- sd(x.min)
-	
-	x.base <- x.med
-	x.base[x.base>(x.min+base.sd)] <- x.min[x.base>(x.min+base.sd)]+base.sd
-	#x.base <- smooth.spline(x.base, df=k/2)$y
-	x.base <- runmean(x.base,k)
-
-	x.clean <- x - x.base
-	x.clean[x.clean<0] <- 0
-	
-	x.clean
+    base.sd <- sd(x.min)
+    x.base <- x.med
+    x.base[x.base > (x.min + base.sd)] <- x.min[x.base > (x.min + base.sd)] + base.sd
+    x.base <- runningmean(x.base, k)
+    x.clean <- x - x.base
+    x.clean[x.clean < 0] <- 0
+    x.clean
 }
 
 soft.filter <- function (mat, p, n = NULL) 

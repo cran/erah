@@ -14,7 +14,7 @@ Returns an alignment table containing the list of aligned metabolites and their 
 
 \value{
 	
-\code{alignList} returns an S3 object:
+\code{alignList} returns a data frame object:
 	\item{AlignID}{The unique Tag for found metabolite by eRah. Each metabolite found by eRah for a given experiment has an unique AlignID tag number.}
 	\item{Factor}{the Factor tag name. Each metabolite has an unique 'Factor' name to enhance visual interpretation.}
 	\item{tmean}{The mean compound retention time.}

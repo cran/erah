@@ -96,12 +96,12 @@ getS.OSD <- function(mod.c, D, ref.response=NULL, beta=2,cutoff=0.05)
 		
 		if(is.null(ref.response))
 		{
-			mat.cor <- cor(mod.l, pr.an$x)
+			mat.cor <- suppressWarnings(cor(mod.l, pr.an$x))
 			cor.vect <- abs(mat.cor)
 			cor.vect[summary(pr.an)$importance[2,]<0.005] <- 0
 			i.comp <- order(cor.vect, decreasing=T)
 		}else{
-			mat.cor <- cor(ref.response, pr.an$rotation)
+			mat.cor <- suppressWarnings(cor(ref.response, pr.an$rotation))
 			cor.vect <- abs(mat.cor)
 			cor.vect[summary(pr.an)$importance[2,]<0.005] <- 0
 			i.comp <- order(cor.vect, decreasing=T)	
@@ -151,16 +151,13 @@ getC.tP <- function(winD, target.s)
 	if(is.na(max.I)) max.I <- 0
 	max.I <- sqrt(max.I)
 	if(max.I>max(winD[which.max(Cps),])) max.I <- max(winD[which.max(Cps),])
-	Cps <- Cps*max.I
+	Cps <- suppressWarnings(Cps*max.I)
 	
 	Cps		
 }
 
 getC.rq <- function(winD, target.s)
 {
-	#winD <- Cmp.Matrix*hanning(nrow(Cmp.Matrix))
-	#target.s <- Target.S
-	
 	target.s <- normalize(target.s)
 	winD[,which(target.s<0.005)] <- 0
 
@@ -172,28 +169,48 @@ getC.rq <- function(winD, target.s)
 	Cps[which(is.na(Cps))] <- 0
 	Cps <- normalize(Cps)
 	
-	max.I <- t(as.matrix(target.s)^2) %*% as.matrix(winD[which.max(Cps),]^2)
+	max.I <- as.vector(t(as.matrix(target.s)^2) %*% as.matrix(winD[which.max(Cps),]^2))
 	if(is.na(max.I)) max.I <- 0
 	max.I <- sqrt(max.I)
 	if(max.I>max(winD[which.max(Cps),])) max.I <- max(winD[which.max(Cps),])
 	Cps <- Cps*max.I	
-	
+
 	Cps			
 }
 
 
-get.factor.list <- function(sampleRD, analysis.window, plotting=F)
+get.factor.list <- function(sampleRD, analysis.window, plotting=FALSE, down.sample, virtual.scans.ps)
 {
+	## Down sampling:
+	if(down.sample){
+		newScansPerSecond <- sampleRD@scans.per.second/(sampleRD@min.peak.width/10)
+		sampleRD@min.peak.width <- (sampleRD@min.peak.width/sampleRD@scans.per.second)*newScansPerSecond 
+		original.time.seq <- seq(0,nrow(sampleRD@data)/sampleRD@scans.per.second/60, length.out=nrow(sampleRD@data))
+		time.seq <- seq(0,nrow(sampleRD@data)/sampleRD@scans.per.second/60,by=1/(newScansPerSecond*60))
+		sampleRD@scans.per.second <- newScansPerSecond 
+		selDownPoints <- sapply(time.seq, function(x) which.min(abs(x-original.time.seq)))
+		sampleRD@data <- sampleRD@data[selDownPoints,]
+	}
+	##
 	
-	if(length(analysis.window)==1 & analysis.window[1]==0)
-	{
+	## Virtualization of scans per second:
+	
+	if(!is.null(virtual.scans.ps)){
+		chromTime <- 1:nrow(sampleRD@data)*sampleRD@scans.per.second
+		time.seq <- seq(min(chromTime, na.rm=T),max(chromTime, na.rm=T),by=1/(virtual.scans.ps))
+		chromD <- apply(sampleRD@data,2,function(x) signal::pchip(chromTime, x, time.seq))
+		sampleRD@data <- chromD
+		sampleRD@min.peak.width <- (sampleRD@min.peak.width/sampleRD@scans.per.second)*virtual.scans.ps 
+		sampleRD@scans.per.second <- virtual.scans.ps
+	}
+	
+	if(length(analysis.window)==1 & analysis.window[1]==0){
 		from.s <- 1
 		to.s <- nrow(sampleRD@data)
 	}else{
 		from.s <- analysis.window[1]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
-	if(trunc(from.s)==0) from.s <- 1
-		to.s <- analysis.window[2]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second
-		
+		if(trunc(from.s)==0) from.s <- 1
+		to.s <- analysis.window[2]*sampleRD@scans.per.second*60 - sampleRD@start.time*sampleRD@scans.per.second	
 		if(from.s<1) from.s <- 1
 		if(to.s>nrow(sampleRD@data)) to.s <- nrow(sampleRD@data)	
 	}
@@ -221,7 +238,7 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 	Scan.K <- sigma.scans	
 	ksp <- vector()
 	sewq <- seq(0.1,1000,0.01)
-	for( i in 1:length(sewq))
+	for(i in 1:length(sewq))
 	{
 		krn <- normalize(dnorm(1:nrow(Chrm.RawData),trunc(nrow(Chrm.RawData)/2),sewq[i]))
 		#krn <- normalize(dnorm(1:length(BIC.signal),trunc(length(BIC.signal)/2),sewq[i]))
@@ -331,6 +348,7 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 			
 		S.cl <- SubModel.Spectra 
 		#C.mod <- getC.tP(Cmp.Matrix, S.cl)
+		#C.mod <- getC.rq(Cmp.Matrix, S.cl)
 		C.mod <- try(getC.rq(Cmp.Matrix, S.cl), silent=T)
 		if(class(C.mod)=="try-error") next
 		
@@ -359,14 +377,13 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=F)
 	{
 		C.matrix <- C.matrix[,-preCouts]
 		S.matrix <- S.matrix[,-preCouts]
-	}
-	
+	}	
 	
 	iteration <- ncol(C.matrix)*2
 	pb <- txtProgressBar(min=1,max=ncol(C.matrix)*3.05, width=50, style=3)
 	setTxtProgressBar(pb, iteration)
 	
-	CorGen <- suppressWarnings(fastCor(C.matrix))
+	CorGen <- suppressWarnings(cor(C.matrix))
 	
 	C.out.inds <- vector()
 	for(j in 1:ncol(C.matrix))

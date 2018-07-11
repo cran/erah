@@ -93,25 +93,41 @@ get.compound.info_MSP <- function(k, Spl.List, type)
 		
 		Spectra <- ""
 		Caps <- apply(as.matrix(x),1, function(x) {strsplit(x,":")[[1]]})
-		Sp.Ini <- which(lapply(Caps,function(y)y[1])=="Num Peaks")
+		Sp.Ini <- which(lapply(Caps,function(y)y[1])=="Num Peaks" | lapply(Caps,function(y)y[1])=="Num peaks")
 		Spectra.semicolon <- paste(x[(Sp.Ini+1):length(x)],collapse="")
-		Spectra.dot <- sapply(strsplit(Spectra.semicolon, "; ")[[1]], function(y) paste(strsplit(y, " ")[[1]], collapse=":"))
+		Spectra.semicolon <- gsub('  ', ' ', Spectra.semicolon)
+		if(strsplit(Spectra.semicolon, '')[[1]][1]==' ') Spectra.semicolon <- paste(strsplit(Spectra.semicolon, '')[[1]][-1], collapse='')
+		
+		if(length(grep(";", Spectra.semicolon))!=0){
+		 	Spectra.dot <- sapply(strsplit(Spectra.semicolon, "; ")[[1]], function(y) paste(strsplit(y, " ")[[1]], collapse=":"))
+		}else{
+			Spectra.dot <- sapply(x[(Sp.Ini+1):length(x)], function(y) paste(strsplit(y, " ")[[1]], collapse=":"))
+		}
 		Spectra <- paste(Spectra.dot , collapse=" ")
 		
 		for(j in 1:length(x.split))
 		{
 			if(x.split[j]=="Name") Name=x.split[j+1]
 			#if(x.split[j]==" MST SEL MASS") SelMZ <- as.vector(sapply(strsplit(x.split[j+1], "\\|"), as.numeric))
-			if(x.split[j]=="CAS#") CAS=x.split[j+1]
+			if(x.split[j]=="CAS#" | x.split[j]=="CASNO") CAS=x.split[j+1]
 			if(x.split[j]=="Formula") Formula=x.split[j+1]
 			if(x.split[j]=="DB#") InChi= x.split[j+1]
-			#if(x.split[j]==" METB KEGG") KEGG=x.split[j+1]			
+			#if(x.split[j]==" METB KEGG") KEGG=x.split[j+1]		
+			
+			if(x.split[j]=="RI")
+			{
+				if(type=="MDN35.ALK") RI.MDN35.ALK=as.numeric(apply(as.matrix(x.split[j+1]), 2, gsub, patt=",", replace="."))
+				if(type=="MDN35.FAME") RI.MDN35.FAME=as.numeric(apply(as.matrix(x.split[j+1]), 2, gsub, patt=",", replace="."))
+				if(type=="VAR5.ALK") RI.VAR5.ALK=as.numeric(apply(as.matrix(x.split[j+1]), 2, gsub, patt=",", replace="."))
+				if(type=="VAR5.FAME") RI.VAR5.FAME=as.numeric(apply(as.matrix(x.split[j+1]), 2, gsub, patt=",", replace="."))
+			}
+				
 			if(x.split[j]=="MW")
 			{
 				no.dot <- apply(as.matrix(x.split[j+1]), 2, gsub, patt="\\.", replace="")
 				MW=as.numeric(apply(as.matrix(no.dot), 2, gsub, patt=",", replace="."))
 			}
-			if(x.split[j]=="Comments") Comment=x.split[j+1]
+			if(x.split[j]=="Comments" | x.split[j]=="Comment") Comment=x.split[j+1]
 			#if(x.split[j]==" GMD LINK") GMD.LINK=paste(x.split[j+1],":",x.split[j+2],sep="")
 			#if(x.split[j]==" GMD VERS") GMD.VERS= paste(x.split[j+1],":",x.split[j+2],sep="")		
 		}

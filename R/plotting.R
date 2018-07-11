@@ -249,7 +249,13 @@ plotChr <- function(Experiment, N.sample=1, type=c("BIC","TIC","EIC"), xlim=NULL
 {
 	type <- match.arg(type, c("BIC","TIC","EIC"), several.ok = FALSE)
 	
-	sampleRD <- load.file(paste(Experiment@MetaData@DataDirectory, Experiment@MetaData@Instrumental$filename[[N.sample]], sep="/"))
+	if(Experiment@MetaData@DataDirectory == "") {
+        filename <- as.character(Experiment@MetaData@Instrumental$filename[N.sample])
+    }else{
+        filename <- paste(Experiment@MetaData@DataDirectory, "/", Experiment@MetaData@Instrumental$filename[N.sample], sep = "")
+    }
+	
+	sampleRD <- load.file(filename)
 	
 	max.rt <- (nrow(sampleRD@data)/(sampleRD@scans.per.second*60)) + sampleRD@start.time/60
 	min.rt <- sampleRD@start.time/60
