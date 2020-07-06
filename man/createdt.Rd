@@ -19,7 +19,7 @@ vignette("eRahManual", package="erah")
 }
 
 \examples{
-\donttest{
+\dontrun{
 # Store all the raw data files in one different folder per class,
 # and all the class-folders in one folder, which is the experiment
 # folder. Then execute

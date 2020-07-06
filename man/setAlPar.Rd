@@ -16,7 +16,7 @@ mz.range=c(70:600))
 [1] Xavier Domingo-Almenara, et al., eRah: A Computational Tool Integrating Spectral Deconvolution and Alignment with Quantification and Identification of Metabolites in GC-MS-Based Metabolomics. Analytical Chemistry (2016). DOI: 10.1021/acs.analchem.6b02927 
 }
 \author{
-Xavier Domingo-Almenara. xavier.domingo@urv.cat
+Xavier Domingo-Almenara. xavier.domingoa@eurecat.org
 }
 
 \seealso{

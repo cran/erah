@@ -90,12 +90,13 @@ recMissComp <- function(Experiment, min.samples, free.model=F)
 					new.list$"Spectra" <- lost.factor$lost.spectra
 					new.list$"Profile" <- lost.factor$lost.profile
 					new.list$"AlignID" <- lost.FactorID 
-				
-					Experiment@Data@FactorList[colnames(data.list)[sample]][[1]] <- data.frame(rbind(as.matrix(Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]),as.matrix(new.list)))		
-					Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"ID" <- as.integer(Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"ID")
-					Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"RT" <- as.numeric(as.vector(Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"RT"))
-					Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"AlignID" <- as.numeric(as.vector(Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]$"AlignID"))
-					colnames(Experiment@Data@FactorList[colnames(data.list)[sample]][[1]]) <- c("ID", "RT", "Area", "Peak Height", "Spectra", "Profile", "AlignID")						
+					
+					cInd <- which(colnames(data.list) %in% colnames(data.list)[sample])
+					Experiment@Data@FactorList[cInd][[1]] <- data.frame(rbind(as.matrix(Experiment@Data@FactorList[cInd][[1]]),as.matrix(new.list)))		
+					Experiment@Data@FactorList[cInd][[1]]$"ID" <- as.integer(Experiment@Data@FactorList[cInd][[1]]$"ID")
+					Experiment@Data@FactorList[cInd][[1]]$"RT" <- as.numeric(as.vector(Experiment@Data@FactorList[cInd][[1]]$"RT"))
+					Experiment@Data@FactorList[cInd][[1]]$"AlignID" <- as.numeric(as.vector(Experiment@Data@FactorList[cInd][[1]]$"AlignID"))
+					colnames(Experiment@Data@FactorList[cInd][[1]]) <- c("ID", "RT", "Area", "Peak Height", "Spectra", "Profile", "AlignID")						
 				
 				setTxtProgressBar(pb, k.it)
 			}

@@ -27,7 +27,7 @@ The function returns an updated S4 'MetaboSet' class, where the GC-MS samples ha
 [1] Domingo-Almenara X, et al. Compound deconvolution in GC-MS-based metabolomics by blind source separation. Journal of Chromatography A (2015). Vol. 1409: 226-233. DOI: 10.1016/j.chroma.2015.07.044
 }
 \author{
-Xavier Domingo-Almenara. xavier.domingo@urv.cat
+Xavier Domingo-Almenara. xavier.domingoa@eurecat.org
 }
 
 \seealso{

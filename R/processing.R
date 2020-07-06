@@ -328,11 +328,20 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=FALSE, down.samp
 	
 	#ini.pb.val <- length(Cmp.SetPoints)/2
 	iteration <- length(Cmp.SetPoints)
+	if(iteration<=1) {
+		setTxtProgressBar(pb, length(mz.index.vector)*3)
+		feature.list <- data.frame(matrix(nrow=0, ncol=6))
+		colnames(feature.list) <- c("ID","RT","Area","Peak Height","Spectra","Profile")	
+		return(feature.list)
+	} 
 	pb <- txtProgressBar(min=1,max=length(Cmp.SetPoints)*3, width=50, style=3)
 	setTxtProgressBar(pb, iteration)
 	
 	for(k in Cmp.SetPoints)
 	{
+		setTxtProgressBar(pb, iteration)
+		iteration <- iteration + 1
+		
 		span.len <- k.span*2
 		window.span <- (k-span.len):(k+span.len) - 1
 		if(min(window.span)<1) window.span <- window.span[-which(window.span<1)]
@@ -366,8 +375,7 @@ get.factor.list <- function(sampleRD, analysis.window, plotting=FALSE, down.samp
 		C.matrix.aux[window.span,] <- C.mod
 		C.matrix <- cbind(C.matrix, C.matrix.aux)
 		
-		setTxtProgressBar(pb, iteration)
-		iteration <- iteration + 1
+		
 	}
 		
 	## Duplicity Filter:

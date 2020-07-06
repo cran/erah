@@ -27,14 +27,14 @@ The function returns an updated S4 'MetaboSet' class, where the GC-MS samples ha
 [1] Xavier Domingo-Almenara, et al., eRah: A Computational Tool Integrating Spectral Deconvolution and Alignment with Quantification and Identification of Metabolites in GC-MS-Based Metabolomics. Analytical Chemistry (2016). DOI: 10.1021/acs.analchem.6b02927 
 }
 \author{
-Xavier Domingo-Almenara. xavier.domingo@urv.cat
+Xavier Domingo-Almenara. xavier.domingoa@eurecat.org
 }
 
 \seealso{
 \code{\link{newExp}}, \code{\link{setAlPar}}
 }
 \examples{
-\donttest{
+\dontrun{
 # Deconvolve data from a created experiment by newExp().
 ex <- newExp(instrumental="path")
 

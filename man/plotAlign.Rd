@@ -12,7 +12,7 @@ plotAlign(Experiment,AlignId, per.class=T, xlim=NULL)
    \item{xlim}{x axsis (retention time) limits (see \code{\link{plot.default}}).}
 }
 \author{
-Xavier Domingo-Almenara. xavier.domingo@urv.cat
+Xavier Domingo-Almenara. xavier.domingoa@eurecat.org
 }
 
 \seealso{

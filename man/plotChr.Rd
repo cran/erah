@@ -15,7 +15,7 @@ xlim=NULL, mz=NULL)
 }
 
 \examples{
-\donttest{
+\dontrun{
 # First, an experiment has to be already created by newExp()
 # then, each sample chromatogram can be plotted by:
 
