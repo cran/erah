@@ -1,4 +1,4 @@
-a6ceeec587bab2e837053a4f006e1a26 *DESCRIPTION
+2cd02fa1a5ddd96018be08ca5e2e377a *DESCRIPTION
 e90ebe307be186d6e37a514955f752da *NAMESPACE
 62e286441770557f9a8fd0e7b1a04040 *R/DB.R
 f8cbddcd5e954306f717e5a2e56912b6 *R/MSexport.R
@@ -14,13 +14,13 @@ a16d6bb83ade181892c5c11ad9e3d5da *R/alignment.R
 93ce552b9797e3fa59140904da404ecf *R/processing.R
 055b802b99282319191824b6d5ebf35a *R/support.R
 867bebefe3748f4ae4738f8cb40a1dfe *R/support_methods.R
-0ee0647baf0d423bdbcd7601d0b2e71a *R/zzz.R
+158cb6facc675cf98b8f31f7578b6f12 *R/zzz.R
 b90d97e99f456be1f094ad68fc8a4344 *build/vignette.rds
 f11d73c5f0bb849e00f3e7e790aacd32 *data/mslib.rda
 4b284218a3f6f3a654327cedec25e835 *inst/CITATION
-a79017b9ab4319476cc9ec220cdd3e37 *inst/NEWS
+8ddac46fc5d9023edbe27e731a488ed1 *inst/NEWS
 c5b7ff79716e95200489ad23dc86f520 *inst/doc/eRahManual.Rnw
-8bd98449c2f37505768c646061979497 *inst/doc/eRahManual.pdf
+e3c593c5ec0e1a0772d377e571f30222 *inst/doc/eRahManual.pdf
 0c1392ca6c2ebdea28e916bb7074002d *man/MetaboSet-class.Rd
 be14d10461165066a040528f2f61c0ba *man/RawDataParameters-class.Rd
 d770614a62dffc799fe7b49c56724886 *man/alignComp.Rd
