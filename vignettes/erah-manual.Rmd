@@ -1,0 +1,701 @@
+---
+title: "eRah Manual"
+subtitle: "v2.0.0"
+author: "Xavier Domingo–Almenara"
+date: "30 November, 2023"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    highlight: github
+    theme: tactile
+bibliography: citations.bib
+vignette: >
+  %\VignetteIndexEntry{eRah Manual}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+This vignette presents **eRah**, an R package with an integrated design that allows for an innovative deconvolution of GC–MS chromatograms using multivariate techniques based on blind source separation (BSS), alignment of spectra across samples, and automatic identification of metabolites by spectral library matching. 
+**eRah** outputs a table with compound names, matching scores and the area of the compound for each sample. 
+**eRah** is designed in an open-structure, where researchers can integrate different algorithms for each step of the pipeline, i.e., compound deconvolution, alignment, identification or statistical analysis. 
+**eRah** has been tested with GC-TOF/MS and GC-qTOF/MS (using nominal mass) equipment, and is compatible with different spectral databases.
+
+Here, we integrate the downloadable version of the MassBank spectral library for an straightforward identification. 
+If you use the package eRah in your analysis and publications please cite @domingo2015 and @domingo2016.
+@domingo2016 is also referred for a more technical and detailed explanation about the eRah
+methods.
+
+#### Installation
+
+**eRah** can be installed from any **CRAN** repository, by:
+
+
+```r
+install.packages('erah')
+```
+
+Or from GitHub:
+
+
+```r
+remotes::install_github('xdomingoal/erah-devel')
+```
+
+Then loaded using:
+
+
+```r
+library(erah)
+```
+
+```
+## 
+## 
+##       _____        _
+##      |  __ \      | |        eRah R package:
+##   ___| |__) | __ _| |__   	 ----------------
+##  / _ \  _   // _` |  _ \     Untargeted GC-MS metabolomics profiling
+## |  __/ |  \ \ (_| | | | |
+##  \___|_|   \_\__,_|_| |_|    Version 2.0.0
+## 
+##  - Type 'citation('erah')' for citing this R package in publications.
+##  - Type 'vignette('eRahManual', package='erah')' for a tutorial on eRah's usage.
+##  - For bugs, problems and issues, please do not hesitate in contacting xavier.domingoa@eurecat.org or opening an issue on the Github repository (https://github.com/xdomingoal/erah-devel/issues).
+```
+
+#### Support
+
+Any enquiries, bug reports or suggestions are welcome and they should be addressed to xavier.domingoa@eurecat.org. Alternatively, please file an issue (and, if possible, a reproducible example) at <https://github.com/xdomingoal/erah-devel/issues>.
+
+## Introduction
+
+**eRah** automatically detects and deconvolves the spectra of the compounds appearing in GC–MS chromatograms. 
+**eRah** processes the raw data files (netCDF or mzXML) of a complete metabolomics experiment in an automated manner.
+
+After that, compounds are aligned by spectral similarity and retention time distance. 
+**eRah** computes the Euclidean distance between retention time distance and spectral similarity for all compounds in the chromatograms, resulting in compounds appearing across the maximum number of samples and with the least retention time and spectral distance.
+
+Also, an (optional) missing compound recovery step, can be applied to recover those compounds that are missing in some samples. 
+Missing compounds appear as a result of an incorrect deconvolution or alignment - due to a low compound concentration in a sample - , or because it is not present in the sample. This forces the final data table with compound names and compounds area, to not have any missing (zero) values.
+
+Finally, identification of the found metabolites is conducted. 
+A mean spectra from each group of aligned compounds is compared with a reference library. 
+**eRah** includes a custom version of MassBank repository. Other libraries can imported with eRah (e.g., Golm Metabolome Database), and eRah’s deconvolved spectra can be exported for further comparison with NIST library.
+
+## GC–MS Data Processing with eRah: a tutorial
+
+In this section we show the processing of example samples from a spike-in experiment designed for interrogating data processing methods from the **[gcspikelite](https://bioconductor.org/packages/release/data/experiment/html/gcspikelite.html)** data package [@robinson2018] that were analyzed using GC–MS. 
+This sample set consists of nine samples with three triplicate classes.
+
+The **gcspikelite** package can be installed from bioconductor using the **BiocManager** package:
+
+
+```r
+install.packages('BiocManager')
+BiocManager::install('gcspikelite')
+```
+
+The package and necessary data can be loaded using:
+
+
+```r
+library(gcspikelite)
+data("targets")
+```
+
+This tutorial shows how to deconvolve, align and identify the compounds contained in these samples.
+All the listed commands (script) to reproduce the following demo can by found by executing:
+
+
+```r
+library(erah)
+help(package = "erah")
+```
+
+and then click on User guides, package vignettes and other documentation and on source from
+the ’eRah Manual’.
+
+### Creating a new experiment
+
+Prior to deconvolution, alignment and compound identification, we first need to setup a new experiment where the sample meta information is defined, such as file paths and class types.
+**eRah** provides two ways in which this can be achieved.
+The first of which requires only sample file paths and further sample class information is then added manually.
+The second derives sample class information and file paths from the underlying directory structure of a given experiment directory path. 
+
+#### Using file paths only
+
+Using this input method we first load the file paths of the given data set.
+For our example data set from the **gcspikelite** package we can do this by:
+
+
+```r
+files <- list.files(system.file('data',package = 'gcspikelite'),full.names = TRUE)
+files <- files[sapply(files,grepl,pattern = 'CDF')]
+```
+
+`files` then contains a vector of file paths to the nine .CDF files needed for processing.
+An instrumental information table can then be created from these using the following:
+
+
+```r
+instrumental <- createInstrumentalTable(files)
+```
+
+Further columns containing additional sample instrumental information can also be added to this table.
+
+Next we can optionally define our class or phenotype information for our sample set.
+This can be done using the following, providing a vector of classes names that are associated with each file.
+**Ensure that the order of the class affiliations match those of your file paths.** 
+
+
+```r
+classes <- as.character(targets$Group[order(targets$FileName)])
+phenotype <- createPhenoTable(files, cls = classes)
+```
+
+Similarly to the `instrumental` table, columns containing additional sample instrumental information can also be added.
+
+A new experiment can then be setup using our `instrumental` and `phenotype` tables by:
+
+
+```r
+ex <- newExp(instrumental = instrumental,
+             phenotype = phenotype, 
+             info = "DEMO Experiment")
+```
+
+Where an experiment name can be defined using the `info` argument.
+This creates a new `MetaboSet` object used for storing the sample metadata and processing results.
+
+#### Using file directory structure
+
+Alternatively, the structure of an experiment directory can be used to define the instrument and class information.
+The experiment directory should be organized as follows: all the samples related to each class have to be stored in the same folder (one folder = one class), and all the class-folders in one folder, which is the experiment folder (Figure 1). 
+eRah also accepts only one class; in that case, only one class-folder has to be created inside an experiment-folder.
+
+Figure 1 below shows the structure of an example experiment folder name PCOS. This contains two class-folders called ’CONTROL’ and ’DISEASE’, which each contain the sample files for that class. 
+In this case these are the CON BASA 567795.mzXML, and CON BASA 574488.mzXML files in the CONTROL class.
+
+<img src="figures/classFolders.png" alt="**Figure 1:** An example distribution of the raw data files and the class and experiment folders." style="display: block; margin: auto;" />
+
+To create a new experiment we have to create first a .csv type file containing the name of the raw data files to process. 
+The raw data files have to be in the same directory as the instrumental file.
+**eRah** also admits a phenotypic table which contains the classes of the samples. 
+The instrumental data file is always needed but the phenotype file is optional. 
+The instrumental table can have as many columns as desired, but it has to contain at least two columns named ’sampleID’ and ’filename’. 
+The same is applicable to the phenotypic table, in this case the two necessary columns are ’sampleID’ and ’class’. 
+Please note that capital letters of the column names must be respected and that ’sampleID’ is the column that relates the instrumental and phenotypic tables. 
+These files can also be created automatically, execute the following command:
+
+
+```r
+createdt('experiment_path/PCOS/')
+```
+
+Where `experiment_path` is the path where the experiment-folder is, and PCOS is the experiment-folder.
+Two things have to be considered at this step: .csv files are different when created by American and European computers, so errors may raise due to that fact. 
+Also, the folder containing the samples (in this case, the folder ’PCOS’, must contain only folders. 
+If the folder ’PCOS’ contains files (for example, already created .csv files), eRah will prompt an error.
+
+* Note that if you have an specific question about a function, you can always access to the help of the function with a question mark before the name of the function: `?createdt`
+
+The new experiment can then be created by loading the instrumental and phenotypic tables into the workspace and supplying these to `newExp()` as below:
+
+
+```r
+instrumental <- read.csv('experiment_path/PCOS/PCOS_inst.csv')
+phenotype <- read.csv('experiment_path/PCOS/PCOS_pheno.csv')
+
+ex <- newExp(instrumental = instrumental,
+             phenotype = phenotype,
+             info = 'PCOS Experiment')
+```
+
+This creates a new `MetaboSet` object used for storing the sample metadata and processing results.
+
+#### Accessing sample metadata
+
+With `metaData()`, `phenoData()` and `expClasses()` we can retrieve the instrumental data and the experiment classes and the processing status:
+
+
+```r
+metaData(ex)
+```
+
+```
+## # A tibble: 9 × 4
+##   sampleID filename                                                  date  time 
+##   <chr>    <chr>                                                     <chr> <chr>
+## 1 0709_468 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 2 0709_470 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 3 0709_471 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 4 0709_474 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 5 0709_475 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 6 0709_479 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 7 0709_485 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 8 0709_493 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+## 9 0709_496 /Library/Frameworks/R.framework/Versions/4.0/Resources/l… 2022… 11:2…
+```
+
+
+```r
+phenoData(ex)
+```
+
+```
+## # A tibble: 9 × 2
+##   sampleID class
+##   <chr>    <chr>
+## 1 0709_468 mmA  
+## 2 0709_470 mmD  
+## 3 0709_471 mmD  
+## 4 0709_474 mmA  
+## 5 0709_475 mmA  
+## 6 0709_479 mmD  
+## 7 0709_485 mmC  
+## 8 0709_493 mmC  
+## 9 0709_496 mmC
+```
+
+
+```r
+expClasses(ex)
+```
+
+```
+## Experiment containing 9 samples in 3 different type of classes named: mmA, mmC, mmD. 
+##  
+##   Sample ID Class Type Processing Status
+## 1  0709_468        mmA     Not processed
+## 2  0709_470        mmD     Not processed
+## 3  0709_471        mmD     Not processed
+## 4  0709_474        mmA     Not processed
+## 5  0709_475        mmA     Not processed
+## 6  0709_479        mmD     Not processed
+## 7  0709_485        mmC     Not processed
+## 8  0709_493        mmC     Not processed
+## 9  0709_496        mmC     Not processed
+```
+
+### Compound deconvolution
+
+The compounds in data are deconvolved using `deconvolveComp()`. This function requires a `Deconvolution parameters` object, that can be created with `setDecPar` function, containing the parameters of the algorithm as shown as follows:
+
+
+```r
+ex.dec.par <- setDecPar(min.peak.width = 1,
+                        avoid.processing.mz = c(35:69,73:75,147:149))
+```
+
+The peak width value (in seconds) is a critical parameter that conditions the efficiency of eRah, and also the masses to exclude have an important role in GC–MS-based metabolomics experiments.
+
+* **Peak width parameter:** typically, this value should be the less than half of the mean compound width. For this experiment, the average peak width is between 2 and 2.5 seconds, so we selected 1 second peak width. 
+The lower this parameter is set to, the more sensibility to deconvolve co-eluted compounds, but it also may increase the number of false positive compounds. 
+If is set too low the algorithm will generate too false positives compounds, which this usually means that one single compound will be detected twice.
+If the parameter value is increased, the algorithm may fail in separate co-eluted compounds, leading to generate less false positives but loosing capacity of detection.
+
+* **Masses to exclude:** masses m/z 73, 74, 75, 147, 148, 149 are recommended to be excluded in the processing and subsequent steps, since these are ubiquitous mass fragments typically generated from compounds carrying a trimethylsilyl moiety.
+If the samples have been derivatized, including these masses will only hamper the deconvolution process; this is because an important number of compounds will share these masses leading to a poorer selectivity between compounds.
+Also, in complex GC–MS-based metabolomics samples, we also recommend excluding all masses from 1 to 69 Da, for the same reasons. Those masses are generated from compounds with groups that are very common for a large number of compounds in metabolomics, leading to a poorer selectivity between compounds. 
+Although those masses are also the most intense m/z in the compounds spectra, eRah will automatically set the used library’s masses to zero, so it does not affect spectral matching and identification.
+
+**eRah** also supports parallel processing at this step using the [future](https://CRAN.R-project.org/package=future) package. 
+This enables the faster processing of large sample sets.
+
+By default, deconvolution will be done on each file sequentially. However, parallel processing can be activated prior to to this by specifying a parallel backend using `plan()`. The following example specifies using the `multisession` backend (muliple background R sessions) with two worker processes.
+
+
+```r
+plan(future::multisession,workers = 2)
+```
+
+See the future package [documentation](https://CRAN.R-project.org/package=future) for more information on the types of parallel backends that are available.
+
+The samples can then be deconvolved using:
+
+
+```r
+ex <- deconvolveComp(ex, ex.dec.par)
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_468.CDF ... Processing 1 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_470.CDF ... Processing 2 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_471.CDF ... Processing 3 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_474.CDF ... Processing 4 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_475.CDF ... Processing 5 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_479.CDF ... Processing 6 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_485.CDF ... Processing 7 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_493.CDF ... Processing 8 / 9
+```
+
+```
+## 
+##  Deconvolving compounds from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/gcspikelite/data/0709_496.CDF ... Processing 9 / 9
+```
+
+```
+## Compounds deconvolved
+```
+
+```r
+ex
+```
+
+```
+## A "MetaboSet" object containing 9 samples 
+##  
+## Data processed with 
+## Info attached to this experiment: 
+##  DEMO Experiment
+```
+
+Data can be saved and loaded at any stage of the process by:
+
+
+```r
+save(ex, file = "testPCOS.rda")
+# Load
+load("testPCOS.rda")
+```
+
+### Alignment
+
+Alignment is executed with `alignComp()`. The parameters also have to be set prior to this.
+
+
+```r
+ex.al.par <- setAlPar(min.spectra.cor = 0.90, max.time.dist = 3, mz.range = 70:600)
+```
+
+The parameters are `min.spectra.cor`, `max.time.dist` and `mz.range`. 
+The `min.spectra.cor` (Minimum spectral correlation) value - from 0 (non similar) to 1 (very similar) - sets how similar two or more compounds have be to be considered for alignment between them. 
+We can be restrictive with this parameter, as if one compound is not detected in some samples, we can retrieve it later
+by the ’missing compound recovery’ step. 
+Also, we impose a maximum disalignment distance of 3 seconds (`max.time.dist`). 
+This value (in seconds) sets how far two or more compounds can be considered for alignment between them. 
+`mz.range` is the range of masses that is considered when comparing spectra. 
+We set that only the masses from 70 to 600 are taken into account, for the reasons commented above in the ’Masses to exclude’ point.
+
+Alignment can be performed by:
+
+
+```r
+ex <- alignComp(ex, alParameters = ex.al.par)
+```
+
+```
+##   aligning [>--------------------------------------------------]   2% eta: 25s  aligning [=>-------------------------------------------------]   3% eta: 15s  aligning [==>------------------------------------------------]   5% eta: 12s  aligning [===>-----------------------------------------------]   7% eta:  9s  aligning [===>-----------------------------------------------]   9% eta:  8s  aligning [====>----------------------------------------------]  10% eta:  7s  aligning [=====>---------------------------------------------]  12% eta:  8s  aligning [======>--------------------------------------------]  14% eta:  7s  aligning [=======>-------------------------------------------]  16% eta:  7s  aligning [========>------------------------------------------]  17% eta:  6s  aligning [=========>-----------------------------------------]  19% eta:  5s  aligning [==========>----------------------------------------]  21% eta:  5s  aligning [==========>----------------------------------------]  22% eta:  5s  aligning [===========>---------------------------------------]  24% eta:  6s  aligning [============>--------------------------------------]  26% eta:  5s  aligning [=============>-------------------------------------]  28% eta:  5s  aligning [==============>------------------------------------]  29% eta:  5s  aligning [===============>-----------------------------------]  31% eta:  4s  aligning [================>----------------------------------]  33% eta:  4s  aligning [=================>---------------------------------]  34% eta:  4s  aligning [=================>---------------------------------]  36% eta:  4s  aligning [==================>--------------------------------]  38% eta:  3s  aligning [===================>-------------------------------]  40% eta:  3s  aligning [====================>------------------------------]  41% eta:  3s  aligning [=====================>-----------------------------]  43% eta:  3s  aligning [======================>----------------------------]  45% eta:  3s  aligning [=======================>---------------------------]  47% eta:  3s  aligning [========================>--------------------------]  48% eta:  3s  aligning [=========================>-------------------------]  50% eta:  2s  aligning [=========================>-------------------------]  52% eta:  2s  aligning [==========================>------------------------]  53% eta:  2s  aligning [===========================>-----------------------]  55% eta:  2s  aligning [============================>----------------------]  57% eta:  2s  aligning [=============================>---------------------]  59% eta:  2s  aligning [==============================>--------------------]  60% eta:  2s  aligning [===============================>-------------------]  62% eta:  2s  aligning [================================>------------------]  64% eta:  2s  aligning [================================>------------------]  66% eta:  1s  aligning [=================================>-----------------]  67% eta:  1s  aligning [==================================>----------------]  69% eta:  1s  aligning [===================================>---------------]  71% eta:  1s  aligning [====================================>--------------]  72% eta:  1s  aligning [=====================================>-------------]  74% eta:  1s  aligning [======================================>------------]  76% eta:  1s  aligning [=======================================>-----------]  78% eta:  1s  aligning [=======================================>-----------]  79% eta:  1s  aligning [========================================>----------]  81% eta:  1s  aligning [=========================================>---------]  83% eta:  1s  aligning [==========================================>--------]  84% eta:  1s  aligning [===========================================>-------]  86% eta:  0s  aligning [============================================>------]  88% eta:  0s  aligning [=============================================>-----]  90% eta:  0s  aligning [==============================================>----]  91% eta:  0s  aligning [==============================================>----]  93% eta:  0s  aligning [===============================================>---]  95% eta:  0s  aligning [================================================>--]  97% eta:  0s  aligning [=================================================>-]  98% eta:  0s  aligning [===================================================] 100% eta:  0s
+```
+
+```r
+ex
+```
+
+```
+## A "MetaboSet" object containing 9 samples 
+##  
+## Data processed with 
+## Info attached to this experiment: 
+##  DEMO Experiment
+```
+
+* **Aligning large ammout of samples:** For experiments containing more than 100 (Windows) or 1000 (Mac or Linux) samples, alignment could lead to errors or show a poor run-time performance. 
+In those cases alignment can be conducted by block segmentation. 
+For more details about `alignComp()` access help using `?alignComp`
+
+We can decide to execute the missing compound recovery step (and retrieve the compounds that have missing values - have not been found - in certain samples) or also identify the compounds without applying `recMissComp()`. 
+In other words, the missing compound recovery step is optional.
+Here, we apply the missing recovery step to later identify the compounds.
+
+### Missing compound recovery
+
+The missing compound recovery step only requires to indicate the number of minimum values for which a compound wants to be ’re-searched’ in the samples. 
+If a compound appears in at least the same or more samples than the minimum samples value (`min.samples`), then, this compound is searched in the rest of the samples where its concentration has not been registered. 
+To do so:
+
+
+```r
+ex <- recMissComp(ex, min.samples = 6)
+```
+
+```
+##   recovering [====>--------------------------------------------]  11% eta: 34s  recovering [==========>--------------------------------------]  22% eta: 29s  recovering [===============>---------------------------------]  33% eta: 25s  recovering [=====================>---------------------------]  44% eta: 20s  recovering [==========================>----------------------]  56% eta: 16s  recovering [================================>----------------]  67% eta: 12s  recovering [=====================================>-----------]  78% eta:  8s  recovering [===========================================>-----]  89% eta:  4s  recovering [=================================================] 100% eta:  0s
+```
+
+```
+## 
+##  Updating alignment table... 
+## Model fitted!
+```
+
+```r
+ex
+```
+
+```
+## A "MetaboSet" object containing 9 samples 
+##  
+## Data processed with 
+## Info attached to this experiment: 
+##  DEMO Experiment
+```
+
+* **Missing compound recovery:** The min.samples parameter sets the number of samples from the total number of samples.
+Also, this parameter should be large, in alignment with the dimension of the number of samples in the experiment. 
+If set too low, a higher number of false positives are expected. 
+A recommended strategy is to first evaluate the average number of samples where the compounds appear, by executeing `alignList ()` or `idList()` - after being identified - functions (explained in the following sections). 
+**Warning:** if we have already identified the compounds, we always have to re-identify the compounds after executing the missing compound recovery step, by`identifyComp()`, as explained in the following sections.
+
+### Identification
+
+The final processing step is to identify the previously aligned compounds and assign them a putative name. 
+**eRah** compares all the spectra found against a reference database. 
+This package includes a custom version of the MassBank MS library, which is selected as default database for all the functions. 
+However, we strongly encourage the use of the Golm Metabolome Database (GMD). 
+GMD importation is described in following sections.
+
+Identification can be executed by identifyComp, and accessed by idList as follows:
+
+
+```r
+ex <- identifyComp(ex)
+```
+
+```
+## Constructing matrix database... 
+## Comparing spectra... 
+## Done!
+```
+
+```r
+id.list <- idList(ex)
+head(id.list[,1:4], n = 8)
+```
+
+```
+## # A tibble: 8 × 4
+##   AlignID tmean FoundIn Name.1                             
+##     <dbl> <dbl>   <dbl> <chr>                              
+## 1      13  5.79       9 Harmaline (1TMS)                   
+## 2      17  5.88       9 2-Hydroxypyridine                  
+## 3      16  5.96       9 2-Hydroxypyridine                  
+## 4      25  6.08       9 2'-Deoxyadenosine (3TMS)           
+## 5      27  6.18       9 2,3-Bisphospho-glycerate           
+## 6      35  6.36       9 DL-2,3-Diaminopropionic acid (2TMS)
+## 7      39  6.50       9 (R)-(-)-Phenylephrine (2TMS)       
+## 8      44  6.63       9 Malonic acid (2TMS)
+```
+
+### Results and visualization
+
+The identification list can be obtained using:
+
+
+```r
+idList(ex)
+```
+
+```
+## # A tibble: 124 × 18
+##    AlignID tmean FoundIn Name.1     Match…¹ DB.Id.1 CAS.1 Formu…² Name.2 Match…³
+##      <dbl> <dbl>   <dbl> <chr>      <chr>   <chr>   <chr> <chr>   <chr>  <chr>  
+##  1      13  5.79       9 Harmaline… 88.58   "434"   6027… "C16H2… Dopam… 88.40  
+##  2      17  5.88       9 2-Hydroxy… 87.89   " 25"   142-… ""      4-Hyd… 84.63  
+##  3      16  5.96       9 2-Hydroxy… 99.27   " 25"   142-… ""      4-Hyd… 96.55  
+##  4      25  6.08       9 2'-Deoxya… 59.47   "372"   1637… "C22H4… 2'-De… 58.63  
+##  5      27  6.18       9 2,3-Bisph… 75.78   "456"   1443… ""      DL-Ho… 46.51  
+##  6      35  6.36       9 DL-2,3-Di… 94.62   "334"   5487… "C18H4… Oxami… 78.25  
+##  7      39  6.50       9 (R)-(-)-P… 94.10   "322"   61-7… "C18H3… (-)-E… 93.98  
+##  8      44  6.63       9 Malonic a… 52.87   "252"   141-… "C13H2… Dihyd… 36.97  
+##  9      45  6.66       9 L-Alanine… 99.11   "335"   56-4… "C12H3… (R)-(… 98.86  
+## 10      51  6.75       9 L-Alanine… 99.15   "335"   56-4… "C12H3… (R)-(… 98.97  
+## # … with 114 more rows, 8 more variables: DB.Id.2 <chr>, CAS.2 <chr>,
+## #   Formula.2 <chr>, Name.3 <chr>, MatchFactor.3 <chr>, DB.Id.3 <chr>,
+## #   CAS.3 <chr>, Formula.3 <chr>, and abbreviated variable names
+## #   ¹​MatchFactor.1, ²​Formula.1, ³​MatchFactor.2
+```
+
+The alignment list can be returned using:
+
+```r
+alignList(ex)
+```
+
+```
+## # A tibble: 124 × 13
+##    AlignID Factor  tmean FoundIn 0709_…¹ 0709_…² 0709_…³ 0709_…⁴ 0709_…⁵ 0709_…⁶
+##      <int> <chr>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
+##  1      13 Factor…  5.79       9  4.68e4  4.33e4   49578   40353  8.67e4  6.75e4
+##  2      17 Factor…  5.88       9  1.53e5  1.97e5  102053  105891  9.07e4  2.25e5
+##  3      16 Factor…  5.96       9  4.28e5  5.34e5  525813  588514  4.46e5  5.34e5
+##  4      25 Factor…  6.08       9  6.91e4  9.49e4   93110   90711  9.22e4  9.22e4
+##  5      27 Factor…  6.18       9  4.07e5  6.24e5  484318  456469  4.90e5  4.03e5
+##  6      35 Factor…  6.36       9  3.39e4  4.75e4   44354   34835  4.31e4  3.73e4
+##  7      39 Factor…  6.50       9  2.66e4  3.56e4   37724   29419  3.24e4  3.05e4
+##  8      44 Factor…  6.63       9  4.55e6  4.74e6 4642613 5242164  4.99e6  5.70e6
+##  9      45 Factor…  6.66       9  3.02e6  1.62e6 1544762 1223930  1.44e6  1.51e6
+## 10      51 Factor…  6.75       9  8.19e5  9.43e5  923088  811215  8.78e5  7.74e5
+## # … with 114 more rows, 3 more variables: `0709_485` <dbl>, `0709_493` <dbl>,
+## #   `0709_496` <dbl>, and abbreviated variable names ¹​`0709_468`, ²​`0709_470`,
+## #   ³​`0709_471`, ⁴​`0709_474`, ⁵​`0709_475`, ⁶​`0709_479`
+```
+
+And the final data list can be returned using:
+
+
+```r
+dataList(ex)
+```
+
+```
+## # A tibble: 124 × 27
+##    AlignID tmean FoundIn Name.1     Match…¹ DB.Id.1 CAS.1 Formu…² Name.2 Match…³
+##      <dbl> <dbl>   <dbl> <chr>      <chr>   <chr>   <chr> <chr>   <chr>  <chr>  
+##  1      13  5.79       9 Harmaline… 88.58   "434"   6027… "C16H2… Dopam… 88.40  
+##  2      16  5.96       9 2-Hydroxy… 99.27   " 25"   142-… ""      4-Hyd… 96.55  
+##  3      17  5.88       9 2-Hydroxy… 87.89   " 25"   142-… ""      4-Hyd… 84.63  
+##  4      25  6.08       9 2'-Deoxya… 59.47   "372"   1637… "C22H4… 2'-De… 58.63  
+##  5      27  6.18       9 2,3-Bisph… 75.78   "456"   1443… ""      DL-Ho… 46.51  
+##  6      35  6.36       9 DL-2,3-Di… 94.62   "334"   5487… "C18H4… Oxami… 78.25  
+##  7      39  6.50       9 (R)-(-)-P… 94.10   "322"   61-7… "C18H3… (-)-E… 93.98  
+##  8      44  6.63       9 Malonic a… 52.87   "252"   141-… "C13H2… Dihyd… 36.97  
+##  9      45  6.66       9 L-Alanine… 99.11   "335"   56-4… "C12H3… (R)-(… 98.86  
+## 10      51  6.75       9 L-Alanine… 99.15   "335"   56-4… "C12H3… (R)-(… 98.97  
+## # … with 114 more rows, 17 more variables: DB.Id.2 <chr>, CAS.2 <chr>,
+## #   Formula.2 <chr>, Name.3 <chr>, MatchFactor.3 <chr>, DB.Id.3 <chr>,
+## #   CAS.3 <chr>, Formula.3 <chr>, `0709_468` <dbl>, `0709_470` <dbl>,
+## #   `0709_471` <dbl>, `0709_474` <dbl>, `0709_475` <dbl>, `0709_479` <dbl>,
+## #   `0709_485` <dbl>, `0709_493` <dbl>, `0709_496` <dbl>, and abbreviated
+## #   variable names ¹​MatchFactor.1, ²​Formula.1, ³​MatchFactor.2
+```
+
+From the table returned by `idList(ex)`, we see that gallic acid is appearing at minute 7.81 with an AlignID number #84. Let us have a look to its profile with the function plotProfile:
+
+* Execute `?alignList`, to access to the help of alignList function with a detailed
+explanation of each column in an align list.
+
+
+```r
+plotProfile(ex, 84)
+```
+
+<img src="figures/plotProfile-1.png" alt="**Figure 2:** Image from `plotProfile(ex,84)`." style="display: block; margin: auto;" />
+
+This displays Figure 2. Its spectra can be also be plotted and compared with the reference spectra using the function plotSprectra, which displays Figure 3:
+
+
+```r
+plotSpectra(ex, 84)
+```
+
+<img src="figures/plotSpectra-1.png" alt="**Figure 3:** Image from `plotSpectra(ex,84)`." style="display: block; margin: auto;" />
+
+The plotSpectra function has a lot of possibilities for plotting, to know more access to its particular help by executing `?plotSpectra`.
+For example, eRah allows a rapid assessment for visualizing the second hit returned in the case of compound align ID #41 (Urea).
+To do so:
+
+
+```r
+plotSpectra(ex, 84, 2, draw.color = "orange")
+```
+
+<img src="figures/matchFactor-1.png" alt="**Figure 4:** Image from `plotSpectra(ex,84, 2, draw.color=’orange3’)`." style="display: block; margin: auto;" />
+
+This plots Figure 4, which is a comparison of the empirical spectrum found, with the second most similar metabolite from the database (in this case pyridoxamine).
+From the figure, it is clear that eRah returned the first hit correctly, as this spectra is more similar to gallic acid than to pyridoxamine.
+
+## Importing and customizing mass spectral libraries
+
+### Using the Golm Metabolome Database
+
+Users may import their own mass spectral libraries. We strongly recommend using the Golm Metabolome Database (GMD) with eRah.
+To use the GMD, first, we have to download it from its [webpage](http://gmd.mpimp-golm.mpg.de/download/), by downloading the file ”GMD 20111121 VAR5 ALK MSP.txt” or ”GMD 20111121 MDN35 ALK MSP.txt”, depending on which type of chromatographic columns (VAR5 or MDN35) are we using.
+If you are not interested in using any retention index information, then both files can be used indistinctly. 
+Then, we can load the library with the function
+`importMSP()`:
+
+
+```r
+g.info <- "
+GOLM Metabolome Database
+------------------------
+Kopka, J., Schauer, N., Krueger, S., Birkemeyer, C., Usadel, B., Bergmuller, E., Dor-
+mann, P., Weckwerth, W., Gibon, Y., Stitt, M., Willmitzer, L., Fernie, A.R. and Stein-
+hauser, D. (2005) GMD.CSB.DB: the Golm Metabolome Database, Bioinformatics, 21, 1635-
+1638."
+
+golm.database <- importGMD(filename="GMD_20111121_VAR5_ALK_MSP.txt", 
+                           DB.name="GMD", 
+                           DB.version="GMD_20111121", 
+                           DB.info= g.info,type="VAR5.ALK")
+
+# The library in R format can now be stored for a posterior faster loading
+save(golm.database, file= "golmdatabase.rda")
+```
+
+We can substitute the default eRah database object `mslib`, for our custom database, by the following code:
+
+
+```r
+load("golmdatabase.rda")
+mslib <- golm.database
+```
+
+This allows executing all the functions without the need of always setting the library parameter.
+If we do not replace the `mslib` object as shown before, we have to use the new library (in this case `golm.database`) in all the functions, for example:
+
+
+```r
+findComp(name = "phenol", id.database = golm.database)
+```
+
+### Using in-house libraries
+
+Other MSP-formatted libraries can be also imported. The procedure is the same as for the GMD database, with the only exception is that the function is `importMSP` instead of `importGMD`. 
+Access to specific `importMSP` help in R (`?importMSP`) for details on database MSP input format.
+
+## Exporting spectra: comparison with NIST
+
+Users may export their results to MSP format or CEF format for comparison with NIST MS Search software (MSP), or to compare spectra with NIST through the MassHunter workstation (CEF). 
+Users are referred to `exportMSP` and `exportCEF` functions help for more details.
+
+## Final Summary
+To complement the given tutorial, the user may access to the particular help for each function, as shown before. 
+Also, and for more details, please read the original article.
+Here, we show a figure (Figure 5) with all the available functions.
+
+<img src="figures/functionSummary.png" alt="**Figure 5:** **eRah** summary of functions." style="display: block; margin: auto;" />
+
+## References

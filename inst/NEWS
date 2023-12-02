@@ -1,10 +1,12 @@
-erah v1.1.2 (Release date: 2020-05-10)
+erah v2.0.0 (Release date: 2023-01-12)
 ==============
-* Minor bug preventing eRah's loading fixed.
+* Introduced changes in the workflow, correction of bugs and adaptation of the package to newer R versions.
+* New function showRTRIcurve added to support RI-based metabolite annotation.
 
-erah v1.1.1 (Release date: 2020-07-03)
+erah v1.1.1 (Release date: 2019-01-01)
 ==============
-* Minor bugs in import and export functions fixed.
+* eRah now has the ability to use parallel processing to speed up compound deconvolution (enhancement contributed by Dr. J Finch).
+* Minor bug fixes.
 
 erah v1.1.0 (Release date: 2018-07-10)
 ==============

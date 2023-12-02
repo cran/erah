@@ -1,9 +1,0 @@
-\documentclass{article}
-\usepackage{pdfpages}
-\usepackage{graphicx}
-%\VignetteIndexEntry{eRah Manual}
-
-\begin{document}
-\includepdf[pages=-, fitpaper=true]{eem.pdf}
-%\includegraphics{{eRahManual}.pdf}
-\end{document}
