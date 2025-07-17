@@ -1,30 +1,153 @@
 
-# QualityFactorControl <- function(Experiment)
-# {
-	
-	# for(Smp in 1:length(Experiment@Data@FactorList))
-	# {
-		# Peak.Heights <- as.numeric(as.vector(unlist(Experiment@Data@FactorList[[Smp]]$"Peak Height")))
-		# delete.factors <- which(Peak.Heights<Experiment@Data@Parameters$min.peak.height)
-		
-		# if(length(delete.factors)!=0)
-		# {
-			# FactorList.new <- as.data.frame(lapply(Experiment@Data@FactorList[[Smp]], function(x) x[-delete.factors]))
-			# if(any(colnames(FactorList.new)=="Peak.Height")) colnames(FactorList.new)[which(colnames(FactorList.new)=="Peak.Height")] <- "Peak Height"
-
-		# Experiment@Data@FactorList[[Smp]] <- FactorList.new	
-		# }
-	# }
-	# Experiment 	
-# }
-
 
 #' @importFrom utils txtProgressBar setTxtProgressBar getTxtProgressBar
 #' @importFrom stats dist cor
-#' @importFrom igraph graph.data.frame clusters
+#' @importFrom igraph graph_from_data_frame components
 #' @importFrom progress progress_bar
 
 align.factors <- function(factors.list, min.spectra.cor, max.time.dist, max.mz, mz.range)
+{				
+	
+	stopifnot(min.spectra.cor<1,min.spectra.cor>0)
+	
+	empty.samples <- which(lapply(factors.list,nrow)==0)
+	factors.list.original <- NULL
+	if(length(empty.samples)!=0)
+	{
+		factors.list.original <- factors.list
+		factors.list <- factors.list[-empty.samples] 
+	}
+	if(length(factors.list)==1) stop("Only one sample has been processed. No alignment needed")
+	if(length(factors.list)==0) stop("No compounds found, alignment cannot be performed!")
+
+	N.samples <- length(factors.list)
+	
+	factors.assignment.matrix <- apply(as.matrix(1:length(factors.list)),1,function(x) {
+		as.data.frame(matrix(c(rep(x,length(factors.list[[x]]$ID)), 1:length(factors.list[[x]]$ID)), ncol=2))
+		}) 
+	
+	factors.assignment.matrix <- do.call(rbind, factors.assignment.matrix)
+	colnames(factors.assignment.matrix) <- c("Sample","Element")
+	
+	retention.time.vector <- lapply(factors.list,function(x){as.numeric(as.vector(x[,"RT"]))})
+	retention.time.vector <- as.vector(unlist(retention.time.vector))
+	ret.iterator <- as.matrix(1:length(retention.time.vector))
+		
+	order.vector <- order(retention.time.vector)
+	retention.time.vector.o <- retention.time.vector[order.vector]
+	
+	res.vector <- retention.time.vector.o - c(retention.time.vector.o[-1],retention.time.vector.o[length(retention.time.vector.o)])
+	group.flags <- which(abs(res.vector)>max.time.dist)
+	
+	if(length(group.flags)==0)
+    {
+    	time.dist.clustlist <- list(order.vector[1:length(order.vector)])
+    }else{
+	    if (group.flags[1] != 1) group.flags <- c(0, group.flags)
+	    if (group.flags[length(group.flags)] != length(order.vector))  group.flags <- c(group.flags, length(order.vector))
+	    time.dist.clustlist <- sapply(1:(length(group.flags) - 1), function(i) order.vector[(group.flags[i] + 1):group.flags[(i + 1)]])
+	}
+	
+	id.vector <- as.vector(unlist(lapply(factors.list,function(x){as.vector(x[,"ID"])})))
+	global.class.vector <- unlist(apply(as.matrix(1:length(factors.list)),1,function(x){rep(x,length(factors.list[[x]][,1]))}))
+
+	del.inds <- which(unlist(lapply(time.dist.clustlist, length))==1)
+	if(length(del.inds)!=0) time.dist.clustlist <- time.dist.clustlist[-del.inds]
+
+	###################
+	#k <- 1
+	pb <- progress_bar$new(
+	  format = "  aligning [:bar] :percent eta: :eta",
+	  total = length(time.dist.clustlist), clear = FALSE)
+	pb$tick(0)
+
+	global.aligned.factors <- list()
+	for(k in 1:length(time.dist.clustlist))		
+	{
+		local.clust <- time.dist.clustlist[k][[1]]
+		class.vector <- global.class.vector[local.clust]
+			
+		local.spectra.matrix <- sapply(local.clust, function(x){
+			convertMSPspectra(factors.list[[factors.assignment.matrix[x,1]]]$Spectra[[factors.assignment.matrix[x,2]]],max.mz)
+		})		
+		local.spectra.matrix[-mz.range,] <- 0  
+
+		clustEdgeList <- getRTSpectMat(local.spectra.matrix, retention.time.vector[local.clust], class.vector, max.time.dist, min.spectra.cor)	 
+		
+		eu.dist.graph <- graph_from_data_frame(clustEdgeList[,1:2, drop=FALSE], directed = FALSE)
+		eu.dist.clustlist <- split(unique(as.vector(clustEdgeList[,1:2, drop=FALSE])), components(eu.dist.graph)$membership)
+
+		clustlist.unit.length <- which(as.vector(unlist(lapply(eu.dist.clustlist,length)))==1)
+		if(length(clustlist.unit.length)!=0) eu.dist.clustlist <- eu.dist.clustlist[-clustlist.unit.length]
+
+		max.eu.dist <- sqrt((1-min.spectra.cor)^2+max.time.dist^2)
+
+		aligned.factors <-  lapply(eu.dist.clustlist,function(clust){
+			#clust <- eu.dist.clustlist[[2]]
+			
+			clustEL <- na.omit(unique(rbind(clustEdgeList[which(clustEdgeList[,1] %in% clust),], clustEdgeList[which(clustEdgeList[,2] %in% clust),])))
+			clustEL[,3] <- 1 - clustEL[,3]
+		
+			eu.dist.content <- sqrt(clustEL[,4]^2+clustEL[,3]^2)
+			eu.dist.content[eu.dist.content==0] <- NA
+	
+			invWMat <- rbind(cbind(match(clustEL[,1], clust), match(clustEL[,2], clust)), cbind(match(clustEL[,2], clust), match(clustEL[,1], clust)))
+				
+			eu.dist <- matrix(NA, nrow=length(clust), ncol=length(clust))
+			eu.dist[invWMat] <- c(eu.dist.content, eu.dist.content)
+			colnames(eu.dist) <- clust
+			rownames(eu.dist) <- clust
+						
+			forbidden.combinations <- which((class.vector[clust] %*% t(class.vector[clust]))== class.vector[clust]^2, arr.ind=F)
+			eu.dist[forbidden.combinations] <- NA
+			eu.dist[eu.dist==0] <- NA
+			
+			clusts <- comp.clusters(eu.dist, class.vector[clust])
+			clusts <- lapply(clusts,function(x) {clust[as.vector(x$elements)]})
+			clusts
+		})
+		
+		aligned.factors <- unlist(aligned.factors, recursive = FALSE)
+		aligned.factors <- lapply(aligned.factors, function(x) local.clust[x])
+
+		global.aligned.factors <- c(global.aligned.factors,aligned.factors)
+
+		pb$tick()
+	}
+		
+	aligned.factors <- global.aligned.factors
+			
+	if(!(any(unlist(lapply(factors.list,function(x) {is.null(x$AlignID)}))==FALSE)))
+	{	
+		factors.list <- lapply(factors.list, function(x){
+			outp <- cbind(x,matrix(0,nrow=length(x$ID)))
+			colnames(outp)[ncol(outp)] <- "AlignID"
+			outp
+			})
+	}else{
+		factors.list <- lapply(factors.list, function(x){
+			x$AlignID <- rep(0,nrow=length(x$ID))
+			x
+			})
+	}
+	
+	for(i in 1:length(aligned.factors))
+	{
+		x <- aligned.factors[[i]] #[[1]]	
+		loc <- factors.assignment.matrix[x,]
+		for(j in 1:length(loc[,1])) factors.list[[loc[j,1]]]$AlignID[loc[j,2]] <- i	
+	}
+	if(!is.null(factors.list.original))
+	{
+		factors.list.original[-empty.samples] <- factors.list
+		factors.list <- factors.list.original
+	}
+	
+	factors.list
+}
+
+
+align.factors_OLD <- function(factors.list, min.spectra.cor, max.time.dist, max.mz, mz.range)
 {				
 	
 	stopifnot(min.spectra.cor<1,min.spectra.cor>0)
@@ -116,8 +239,8 @@ align.factors <- function(factors.list, min.spectra.cor, max.time.dist, max.mz, 
 		eu.dist[eu.dist==0] <- NA
 		eu.dist.vector <- which(eu.dist<max.eu.dist, arr.ind=T)
 	
-		eu.dist.graph <- graph.data.frame(eu.dist.vector, directed = FALSE)
-		eu.dist.clustlist <- split(unique(as.vector(eu.dist.vector)), clusters(eu.dist.graph)$membership)
+		eu.dist.graph <- graph_from_data_frame(eu.dist.vector, directed = FALSE)
+		eu.dist.clustlist <- split(unique(as.vector(eu.dist.vector)), components(eu.dist.graph)$membership)
 
 		clustlist.unit.length <- which(as.vector(unlist(lapply(eu.dist.clustlist,length)))==1)
 		if(length(clustlist.unit.length)!=0) eu.dist.clustlist <- eu.dist.clustlist[-clustlist.unit.length]

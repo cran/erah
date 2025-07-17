@@ -1,3 +1,7 @@
+erah v2.2.0 (Release date: 2025-07-16)
+==============
+* Faster aligment algorithm implementation. 
+
 erah v2.0.0 (Release date: 2023-01-12)
 ==============
 * Introduced changes in the workflow, correction of bugs and adaptation of the package to newer R versions.

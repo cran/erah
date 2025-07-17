@@ -472,10 +472,10 @@ using the <a href="https://CRAN.R-project.org/package=future">future</a>
 package. This enables the faster processing of large sample sets.</p>
 <p>By default, deconvolution will be done on each file sequentially.
 However, parallel processing can be activated prior to to this by
-specifying a parallel backend using <code>plan()</code>. The following
-example specifies using the <code>multisession</code> backend (muliple
-background R sessions) with two worker processes.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(future<span class="sc">::</span>multisession,<span class="at">workers =</span> <span class="dv">2</span>)</span></code></pre></div>
+specifying a parallel backend using <code>future::plan()</code>. The
+following example specifies using the <code>multisession</code> backend
+(muliple background R sessions) with two worker processes.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>future<span class="sc">::</span><span class="fu">plan</span>(future<span class="sc">::</span>multisession,<span class="at">workers =</span> <span class="dv">2</span>)</span></code></pre></div>
 <p>See the future package <a href="https://CRAN.R-project.org/package=future">documentation</a> for
 more information on the types of parallel backends that are
 available.</p>

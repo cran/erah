@@ -14,7 +14,7 @@
 
  - Type 'citation('erah')' for citing this R package in publications.
  - Type 'vignette('eRahManual', package='erah')' for a tutorial on eRah's usage.
- - For bugs, problems and issues, please do not hesitate in contacting xavier.domingoa@eurecat.org or opening an issue on the Github repository (https://github.com/xdomingoal/erah-devel/issues).")
+ - For bugs, problems and issues, please do not hesitate in contacting xavier.domingo@urv.cat or opening an issue on the Github repository (https://github.com/xdomingoal/erah-devel/issues).")
 
   packageStartupMessage(erah.logo)
 }

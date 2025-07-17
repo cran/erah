@@ -92,29 +92,50 @@ break.vector <- function(x)
 }
 
 
-runningmean = function(x, k){
-  dimx = dim(x) # Capture dimension of input array - to be used for formating y
-  x = as.vector(x)
-  n = length(x)
-  if (k<=1) return (x)
-  if (k >n) k = n
-  k2 = k%/%2
+# runningmean = function(x, k){
+  # dimx = dim(x) # Capture dimension of input array - to be used for formating y
+  # x = as.vector(x)
+  # n = length(x)
+  # if (k<=1) return (x)
+  # if (k >n) k = n
+  # k2 = k%/%2
   
-  y <- .C("runmean", as.double(x), y = double(n), as.integer(n), as.integer(k), NAOK=TRUE, PACKAGE="erah")$y
-  y
+  # y <- .C("runmean", as.double(x), y = double(n), as.integer(n), as.integer(k), NAOK=TRUE, PACKAGE="erah")$y
+  # y
+# }
+
+# # runningmin = function(x, k)
+# {
+  # dimx = dim(x)  # Capture dimension of input array - to be used for formating y
+  # x = as.vector(x)
+  # n = length(x)
+  # if (k<=1) return (x)
+  # if (k >n) k = n
+  
+  # y <- .C("runmin", as.double(x), y = double(n), as.integer(n), as.integer(k), NAOK=TRUE, PACKAGE="erah")$y
+  # y
+# }
+
+
+getRTSpectMat <- function(mat, rt_vect, class_vect, rt_threshold, corr_threshold) {
+    .Call("_erah_getRTSpectMatrix", mat, rt_vect, class_vect, rt_threshold, corr_threshold)
 }
 
-runningmin = function(x, k)
-{
-  dimx = dim(x)  # Capture dimension of input array - to be used for formating y
-  x = as.vector(x)
-  n = length(x)
-  if (k<=1) return (x)
-  if (k >n) k = n
-  
-  y <- .C("runmin", as.double(x), y = double(n), as.integer(n), as.integer(k), NAOK=TRUE, PACKAGE="erah")$y
-  y
+runningmin <- function(x,k) {
+	#dimx = dim(x)  # Capture dimension of input array - to be used for formating y
+  	x = as.vector(x)
+  	n = length(x)
+  	if (k<=1) return (x)
+  	if (k >n) k = n
+    .Call("_erah_runmin", as.double(x), as.integer(k))
 }
 
+runningmean <- function(x,k) {
+	x = as.vector(x)
+  	n = length(x)
+  	if (k<=1) return (x)
+  	if (k >n) k = n
+    .Call("_erah_runmean", as.double(x), as.integer(k))
+}
 
 
